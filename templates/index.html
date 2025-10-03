@@ -88,7 +88,6 @@
 </head>
 <body>
     <div class="container">
-        
         <div id="login-form">
             <h2>Sign In</h2>
             <form action="{{ url_for('login') }}" method="POST">
@@ -103,7 +102,7 @@
                 <button type="submit">Login</button>
             </form>
             <div class="toggle-switch">
-                Don't have an account? <a onclick="showRegister()">Register</a>
+                New Trainer? <a onclick="showRegister()">Register</a>
             </div>
         </div>
         
@@ -129,10 +128,9 @@
                 <button type="submit">Register</button>
             </form>
             <div class="toggle-switch">
-                Already have an account? <a onclick="showLogin()">Login</a>
+                Already a Trainer? <a onclick="showLogin()">Login</a>
             </div>
         </div>
-
     </div>
 
     <script>

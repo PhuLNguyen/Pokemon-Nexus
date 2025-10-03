@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: phu-mongodb
+    restart: unless-stopped
+    ports:
+      # Host:Container
+      - "27017:27017" 
+    environment:
+      # --- Root User for Initial Authentication (Required by the official image) ---
+      # This user has admin rights to the entire instance.
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      
+      # --- Target Database for Init Script ---
+      # Sets the default database for the init script execution.
+      MONGO_INITDB_DATABASE: PokemonNexusDB 
+      
+    volumes:
+      # Persist the database data
+      - phu-mongo-volume:/data/db
+      # Mount the local scripts directory to the container's init directory
+      - ./mongo-init-scripts:/docker-entrypoint-initdb.d:ro
+
+volumes:
+  phu-mongo-volume:
