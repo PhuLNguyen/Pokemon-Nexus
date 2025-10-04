@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Game Menu</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column; /* Stack action and menu areas */
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #2c3e50; /* Darker background for a game feel */
+            color: #ecf0f1;
+        }
+
+        /* --- Action Container (The Main Display Area) --- */
+        #action-container {
+            width: 80%;
+            max-width: 900px;
+            min-height: 400px;
+            margin-bottom: 20px; /* Space between action and menu */
+            padding: 25px;
+            background-color: #34495e;
+            border-radius: 10px;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+            border: 2px solid #e74c3c; /* A game border */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        /* --- Menu Container (The Buttons) --- */
+        .menu-container {
+            display: flex;
+            flex-direction: row; /* Horizontal button layout */
+            gap: 15px;
+            padding: 15px 30px;
+            background-color: #1e2b38;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .menu-button {
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #ecf0f1;
+            background-color: #3498db;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        /* Specific styles for different button vibes */
+        #logout-btn { background-color: #e74c3c; } /* Red */
+        #gatcha-btn { background-color: #f1c40f; color: #333; } /* Yellow/Gold */
+        
+        .menu-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+        }
+
+        #logout-btn:hover { background-color: #c0392b; }
+        #gatcha-btn:hover { background-color: #f39c12; }
+        
+        .menu-button:active { transform: translateY(0); }
+
+        /* Styles for content inside the action container */
+        .pokemon-card {
+            background: #fff;
+            color: #333;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 300px;
+            margin: 10px;
+        }
+        .pokemon-card img {
+            width: 100px;
+            height: 100px;
+            display: block;
+            margin: 0 auto 10px;
+        }
+        .stat-list {
+            list-style: none;
+            padding: 0;
+            text-align: left;
+        }
+        .stat-list li {
+            padding: 3px 0;
+            border-bottom: 1px dashed #ccc;
+        }
+    </style>
+</head>
+<body>
+    
+    <div id="action-container">
+        <h1>Welcome! Select a menu option to begin.</h1>
+        <p>This is where the dynamic content will appear.</p>
+    </div>
+
+    <div class="menu-container">
+		<button id="gatcha-btn" class="menu-button" data-action="gatcha">Gatcha</button>
+        <button id="inventory-btn" class="menu-button" data-action="inventory">Inventory</button>
+        <button id="battle-btn" class="menu-button" data-action="battle">Battle</button>
+        <button id="trade-btn" class="menu-button" data-action="trade">Trade</button>
+        <a id="logout-btn" class="menu-button" href="/">Logout</a>
+	</div>
+
+    <script>
+        const actionContainer = document.getElementById('action-container');
+        const menuButtons = document.querySelectorAll('.menu-button');
+
+        // Initial game data state
+        let pokemonList = [
+            { name: "Pikachu", atk: 55, def: 40, hp: 35, image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png" },
+            { name: "Bulbasaur", atk: 49, def: 49, hp: 45, image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png" },
+            { name: "Charmander", atk: 52, def: 43, hp: 39, image: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png" }
+        ];
+
+        // Function to handle the Gatcha logic
+        function handleGatcha() {
+            // Simple random selection from the list
+            const randomIndex = Math.floor(Math.random() * pokemonList.length);
+            const newPokemon = pokemonList[randomIndex];
+            
+            // To simulate a 'new' catch, we'll just show the one we pulled.
+            // In a real app, you would fetch a new one and add it to the list.
+            
+            return `
+                <div class="pokemon-card">
+                    <h2>🎉 Gatcha Pull! You Got: ${newPokemon.name}! 🎉</h2>
+                    <img src="${newPokemon.image}" alt="${newPokemon.name}">
+                    <ul class="stat-list">
+                        <li><strong>HP:</strong> ${newPokemon.hp}</li>
+                        <li><strong>ATK:</strong> ${newPokemon.atk}</li>
+                        <li><strong>DEF:</strong> ${newPokemon.def}</li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        // Function to handle the Inventory logic
+        function handleInventory() {
+            if (pokemonList.length === 0) {
+                return `<h2>Inventory Empty</h2><p>You haven't caught any Pokemon yet!</p>`;
+            }
+
+            const inventoryHtml = pokemonList.map(p => `
+                <div class="pokemon-card" style="display:inline-block; margin: 10px;">
+                    <h3>${p.name}</h3>
+                    <img src="${p.image}" alt="${p.name}">
+                    <ul class="stat-list">
+                        <li>HP: ${p.hp}</li>
+                        <li>ATK: ${p.atk}</li>
+                        <li>DEF: ${p.def}</li>
+                    </ul>
+                </div>
+            `).join('');
+
+            return `
+                <h2>Your Pokemon Inventory (${pokemonList.length} Caught)</h2>
+                <div style="display:flex; flex-wrap:wrap; justify-content:center;">${inventoryHtml}</div>
+            `;
+        }
+
+        // Main function to load content based on the button clicked
+        function loadContent(action) {
+            let content = '';
+
+            switch (action) {
+                case 'gatcha':
+                    content = handleGatcha();
+                    break;
+                case 'inventory':
+                    content = handleInventory();
+                    break;
+                case 'battle':
+                    content = '<h2>Battle Queue</h2><p>Searching for opponents...</p><p>You are currently player #5 in the queue.</p>';
+                    break;
+                case 'trade':
+                    content = '<h2>Pending Trades</h2><p>You have 3 pending trade offers.</p><ul><li>Trade with Trainer Red</li><li>Trade with Trainer Blue</li><li>Trade with Gym Leader Brock</li></ul>';
+                    break;
+                default:
+                    content = '<h2>Welcome Home Trainer!</h2>';
+            }
+
+            actionContainer.innerHTML = content;
+        }
+
+        // Attach event listeners to all menu buttons
+        menuButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const action = button.getAttribute('data-action');
+                loadContent(action);
+            });
+        });
+
+		// Load default content on page load
+        loadContent('Welcome!');
+    </script>
+</body>
+</html>
