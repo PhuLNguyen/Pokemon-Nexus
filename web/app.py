@@ -84,7 +84,7 @@ def login():
         if user['password'] == password: # ⚠️ DANGER: Replace with bcrypt check in production
             flash(f'Successfully logged in as {email}!', 'success')
             # You would typically set a session variable here
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('home'))
         else:
             flash('Invalid email or password.', 'error')
     else:
@@ -94,18 +94,12 @@ def login():
     return redirect(url_for('index'))
 
 
-# --- 3. Example Dashboard and Run App ---
+# --- 3. Example home and Run App ---
 
-@app.route('/dashboard')
-def dashboard():
-    """A page the user sees after a successful login."""
-    # In a real app, you would check if the user is authenticated here.
-    # You can access MongoDB data here, e.g., to display user-specific info
-    
-    # Example of retrieving ALL players for demonstration (not for production):
-    all_players = list(mongo.db.players.find())
-    
-    return render_template('dashboard.html', players=all_players)
+@app.route('/home')
+def home():
+    # A page the user sees after a successful login
+    return render_template('home.html')
 
 
 if __name__ == '__main__':
