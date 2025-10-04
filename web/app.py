@@ -7,16 +7,13 @@ import os
 
 app = Flask(__name__)
 
-# Replace with your actual MongoDB URI!
-# Example for a local server: "mongodb://localhost:27017/user_auth_db"
-# Example for MongoDB Atlas: "mongodb+srv://<user>:<password>@clustername.mongodb.net/user_auth_db?retryWrites=true&w=majority"
-app.config["MONGO_URI"] = "mongodb://pythonFlaskApp:securePassword123@localhost:27017/user_auth_db"
-app.secret_key = 'your_strong_and_secret_key_for_flashing' 
+app.config["MONGO_URI"] = os.getenv("MONGO_URI", "mongodb://localhost:27017/fallback_db")
+app.secret_key = os.getenv("SECRET_KEY", "a_development_fallback_key") 
 
 # Initialize Flask-PyMongo
 mongo = PyMongo(app)
 
-# The 'users' collection will be accessed as mongo.db.users
+# The 'players' collection will be accessed as mongo.db.players
 
 # --- 2. ROUTES FOR USER INTERACTION ---
 
@@ -40,7 +37,7 @@ def register():
         return redirect(url_for('index'))
 
     # Check if user already exists (Read operation)
-    existing_user = mongo.db.users.find_one({'email': email})
+    existing_user = mongo.db.players.find_one({'email': email})
     if existing_user:
         flash('Email already registered. Please log in.', 'error')
         return redirect(url_for('index'))
@@ -56,8 +53,8 @@ def register():
             "password": password # ⚠️ DANGER: Replace with hashed password in production
         }
         
-        # Insert the new document into the 'users' collection
-        mongo.db.users.insert_one(user_data)
+        # Insert the new document into the 'players' collection
+        mongo.db.players.insert_one(user_data)
         
         flash(f'Account created for {email}! Please log in.', 'success')
         
@@ -79,7 +76,7 @@ def login():
         return redirect(url_for('index'))
 
     # Retrieve user data (Read operation)
-    user = mongo.db.users.find_one({'email': email})
+    user = mongo.db.players.find_one({'email': email})
 
     if user:
         # Check if the retrieved password matches the submitted password
@@ -105,10 +102,10 @@ def dashboard():
     # In a real app, you would check if the user is authenticated here.
     # You can access MongoDB data here, e.g., to display user-specific info
     
-    # Example of retrieving ALL users for demonstration (not for production):
-    all_users = list(mongo.db.users.find())
+    # Example of retrieving ALL players for demonstration (not for production):
+    all_players = list(mongo.db.players.find())
     
-    return render_template('dashboard.html', users=all_users)
+    return render_template('dashboard.html', players=all_players)
 
 
 if __name__ == '__main__':

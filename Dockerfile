@@ -1,10 +1,18 @@
-# This is not actual dockerfile content, just commands to run
-# to set up the environment for the Flask app.
-pip3 install Flask Flask-PyMongo
-python3 app.py
-docker run -d \ \
-    --name mongo_dev \
-    -p 27017:27017 \
-    -e MONGO_INITDB_ROOT_USERNAME=admin \
-    -e MONGO_INITDB_ROOT_PASSWORD=password \
-    mongo
+# Use the official Python image
+FROM python:3.11-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Install dependencies
+COPY ./web/requirements.txt  .
+RUN pip install --no-cache-dir -r ./requirements.txt
+
+# Copy the application code to the container
+COPY ./web .
+
+# Expose the port that Flask runs on
+EXPOSE 5000
+
+# Command to run the application
+CMD ["flask", "run", "--host=0.0.0.0"]

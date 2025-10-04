@@ -1,10 +1,23 @@
-version: '3.8'
-
 services:
+  web:
+    build: .
+    ports:
+      # Host:Container
+      - "5000:5000"
+    environment:
+      # Flask app environment variables
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+      # Database Connection String for Flask (connects to the 'mongodb' service)
+      - MONGO_URI=mongodb://admin:password@mongodb:27017/PokemonNexusDB?authSource=admin
+      - SECRET_KEY=your_strong_and_secret_key_for_flashing
+    depends_on:
+      - mongodb # Ensures the 'mongodb' service starts before 'web'
+
   mongodb:
     image: mongo:latest
     container_name: phu-mongodb
-    restart: unless-stopped
+    restart: always
     ports:
       # Host:Container
       - "27017:27017" 
@@ -13,16 +26,9 @@ services:
       # This user has admin rights to the entire instance.
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
-      
-      # --- Target Database for Init Script ---
-      # Sets the default database for the init script execution.
-      MONGO_INITDB_DATABASE: PokemonNexusDB 
-      
     volumes:
       # Persist the database data
       - phu-mongo-volume:/data/db
-      # Mount the local scripts directory to the container's init directory
-      - ./mongo-init-scripts:/docker-entrypoint-initdb.d:ro
 
 volumes:
   phu-mongo-volume:
