@@ -123,14 +123,6 @@ def run_gatcha():
     # Save the new Pokemon to the database
     mongo.db.pokemon.insert_one(new_pokemon)
 
-    """
-    gatcha_pool = [
-        {"name": "Squirtle", "atk": 48, "def": 65, "hp": 44, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png"},
-        {"name": "Jigglypuff", "atk": 45, "def": 20, "hp": 115, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/39.png"},
-        {"name": "Snorlax", "atk": 110, "def": 65, "hp": 160, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/143.png"}
-    ]
-    """
-
     # Return the newly caught Pokemon data
     return jsonify({"message": "Gatcha successful!", "new_pokemon": new_pokemon})
 
