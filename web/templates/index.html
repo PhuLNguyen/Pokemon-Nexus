@@ -42,8 +42,7 @@
         }
 
         input[type="email"],
-        input[type="password"],
-        input[type="text"] {
+        input[type="password"]{
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
@@ -109,10 +108,6 @@
         <div id="register-form">
             <h2>Register Account</h2>
             <form action="{{ url_for('register') }}" method="POST">
-                <div class="form-group">
-                    <label for="register-name">Name (Optional):</label>
-                    <input type="text" id="register-name" name="name">
-                </div>
                 <div class="form-group">
                     <label for="register-email">Email:</label>
                     <input type="email" id="register-email" name="email" required>
