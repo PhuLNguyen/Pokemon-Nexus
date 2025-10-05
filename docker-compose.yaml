@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   web:
     build: .
@@ -13,6 +15,14 @@ services:
       - SECRET_KEY=your_strong_and_secret_key_for_flashing
     depends_on:
       - mongodb # Ensures the 'mongodb' service starts before 'web'
+    # volume mounts src code and watch for changes in development
+    volumes:
+      - ./web:/app
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./web/
+          target: /app/
 
   mongodb:
     image: mongo:latest
