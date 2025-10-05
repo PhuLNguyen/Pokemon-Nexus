@@ -105,6 +105,12 @@ def home():
     # A page the user sees after a successful login
     return render_template('home.html')
 
+@app.route('/api/inventory', methods=['GET'])
+def get_inventory():
+    """Returns a list of all Pokemon in the player inventory."""
+    inventory = list(mongo.db.pokemon.find({'player': session['email']}))
+    return jsonify(inventory)
+
 @app.route('/api/gatcha', methods=['POST'])
 def run_gatcha():
     """Pulls a random Pokemon and adds it to the inventory."""
@@ -113,9 +119,9 @@ def run_gatcha():
     # Add the player's email to associate the Pokemon with the user
 
     gatcha_pool = [
-        {"player":session["email"], "name": "Squir", "atk": 48, "def": 65, "hp": 44, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png"},
-        {"player":session["email"], "name": "Jigglypu", "atk": 45, "def": 20, "hp": 115, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/39.png"},
-        {"player":session["email"], "name": "Snor", "atk": 110, "def": 65, "hp": 160, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/143.png"}
+        {"player":session["email"], "name": "Squirtle", "atk": 48, "def": 65, "hp": 44, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png"},
+        {"player":session["email"], "name": "Jigglypuff", "atk": 45, "def": 20, "hp": 115, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/39.png"},
+        {"player":session["email"], "name": "Snorlax", "atk": 110, "def": 65, "hp": 160, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/143.png"}
     ]
     
     new_pokemon = random.choice(gatcha_pool)
