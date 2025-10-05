@@ -137,5 +137,14 @@ def run_gatcha():
     # Return the newly caught Pokemon data
     return jsonify({"message": "Gatcha successful!", "new_pokemon": new_pokemon})
 
+@app.route('/api/battle', methods=['GET'])
+def get_battle_queue():
+    """Returns placeholder data for the battle queue."""
+    return jsonify({
+        "status": "In Queue",
+        "position": random.randint(1, 10),
+        "message": "Searching for opponents..."
+    })
+
 if __name__ == '__main__':
     app.run(debug=True)
