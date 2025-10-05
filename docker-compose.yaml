@@ -7,18 +7,16 @@ services:
     environment:
       # Flask app environment variables
       - FLASK_APP=app.py
+      # Below settings allow auto-reloading when Flask detects code changes
       - FLASK_ENV=development
+      - FLASK_DEBUG=True
       # Database Connection String for Flask (connects to the 'mongodb' service)
       - MONGO_URI=mongodb://admin:password@mongodb:27017/PokemonNexusDB?authSource=admin
       - SECRET_KEY=your_strong_and_secret_key_for_flashing
     depends_on:
       - mongodb # Ensures the 'mongodb' service starts before 'web'
-    # watch for changes in development
-    develop:
-      watch:
-        - action: sync+restart
-          path: ./web/
-          target: /app/
+    volumes:
+      - ./web:/app # Mount the web directory to /app in the container
 
   mongodb:
     image: mongo:latest

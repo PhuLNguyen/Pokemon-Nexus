@@ -1,0 +1,12 @@
+    # sync: watch for changes in development files and sync it with container. 
+    # Similar to volume mount but more efficient for development.
+	# Note: the 'sync' action will not monitor any mount volume
+
+	# sync+restart: synchronize the files and restart the container
+
+    # docker compose watch
+    develop:
+      watch:
+        - action: sync
+          path: ./web/
+          target: /app/
