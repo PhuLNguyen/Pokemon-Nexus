@@ -146,5 +146,17 @@ def get_battle_queue():
         "message": "Searching for opponents..."
     })
 
+@app.route('/api/trade', methods=['GET'])
+def get_pending_trades():
+    """Returns placeholder data for pending trades."""
+    return jsonify({
+        "count": 3,
+        "trades": [
+            {"id": 101, "partner": "Trainer Red", "offer": "Shiny Pidgey"},
+            {"id": 102, "partner": "Trainer Blue", "offer": "Legendary Zapdos"},
+            {"id": 103, "partner": "Gym Leader Brock", "offer": "Onix"}
+        ]
+    })
+
 if __name__ == '__main__':
     app.run(debug=True)
