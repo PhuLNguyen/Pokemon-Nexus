@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash # Reco
 from bson.objectid import ObjectId # Import for converting string IDs back to ObjectId
 import os
 import random
+from datetime import datetime
 
 # --- 1. SETUP AND CONFIGURATION ---
 
@@ -98,9 +99,6 @@ def login():
 
     return redirect(url_for('index'))
 
-
-# --- 3. Example home and Run App ---
-
 @app.route('/home')
 def home():
     # A page the user sees after a successful login
@@ -142,9 +140,9 @@ def run_gatcha():
     # Add the player's email to associate the Pokemon with the user
 
     gatcha_pool = [
-        {"player":session["email"], "name": "Squirtle", "atk": 48, "def": 65, "hp": 44, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png"},
-        {"player":session["email"], "name": "Jigglypuff", "atk": 45, "def": 20, "hp": 115, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/39.png"},
-        {"player":session["email"], "name": "Snorlax", "atk": 110, "def": 65, "hp": 160, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/143.png"}
+        {"player":session["email"], "name": "Squirtle", "atk": 48, "def": 65, "hp": 44, "locked":False, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png"},
+        {"player":session["email"], "name": "Jigglypuff", "atk": 45, "def": 20, "hp": 115, "locked":False, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/39.png"},
+        {"player":session["email"], "name": "Snorlax", "atk": 110, "def": 65, "hp": 160, "locked":False, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/143.png"}
     ]
     
     new_pokemon = random.choice(gatcha_pool)
@@ -165,15 +163,117 @@ def get_battle_queue():
     })
 
 @app.route('/api/trade', methods=['GET'])
-def get_pending_trades():
-    """Returns placeholder data for pending trades."""
+def get_trade_menu_data():
+    """Returns the current player's inventory and all pending trades."""
+    # 1. Get current player's available (unlocked) inventory
+    available_inventory = []
+    for doc in mongo.db.pokemon.find({"player": session['email'], "locked": False}):
+        doc['id'] = str(doc.pop('_id')) 
+        available_inventory.append(doc)
+    
+    # 2. Get all pending trades
+    pending_trades = []
+    for doc in mongo.db.trade.find({"status": "pending"}):
+        doc['id'] = str(doc.pop('_id'))
+        
+        # Look up the details of the offered pokemon (for display)
+        offered_pokemon_details = []
+        for p_id in doc['offering_ids']:
+            p_doc = mongo.db.pokemon.find_one({'_id': ObjectId(p_id)})
+            if p_doc:
+                offered_pokemon_details.append({"name": p_doc['name'], "image": p_doc['image']})
+        
+        doc['offered_details'] = offered_pokemon_details
+        pending_trades.append(doc)
+
     return jsonify({
-        "count": 3,
-        "trades": [
-            {"id": 101, "partner": "Trainer Red", "offer": "Shiny Pidgey"},
-            {"id": 102, "partner": "Trainer Blue", "offer": "Legendary Zapdos"},
-            {"id": 103, "partner": "Gym Leader Brock", "offer": "Onix"}
-        ]
+        "inventory": available_inventory,
+        "pending_trades": pending_trades,
+        "current_player": session['email']
+    })
+
+
+@app.route('/api/trade/create', methods=['POST'])
+def create_trade():
+    """Locks selected Pokemon and creates a new trade request."""
+    data = request.get_json()
+    offering_ids = data.get('offering_ids', [])
+    looking_for_count = data.get('looking_for_count')
+
+    if not offering_ids or looking_for_count is None or looking_for_count < 1:
+        return jsonify({"message": "Invalid trade data."}), 400
+
+    object_ids = [ObjectId(p_id) for p_id in offering_ids]
+    
+    # 1. Lock the Pokemon for trade
+    lock_result = mongo.db.pokemon.update_many(
+        {'_id': {'$in': object_ids}, 'player': session['email'], 'locked': False},
+        {'$set': {'locked': True}}
+    )
+
+    if lock_result.modified_count != len(object_ids):
+        # This handles if some were already locked or didn't belong to the player
+        return jsonify({"message": "Could not lock all selected Pokemon. Operation aborted."}), 409
+
+    # 2. Create the trade request document
+    trade_request = {
+        "creator": session['email'],
+        "offering_ids": offering_ids, # Store as strings for easier retrieval
+        "looking_for_count": looking_for_count,
+        "status": "pending",
+        "timestamp": datetime.now()
+    }
+    mongo.db.trade.insert_one(trade_request)
+    
+    return jsonify({
+        "message": f"Trade request created! {len(offering_ids)} Pokemon locked.",
+        "locked_count": lock_result.modified_count
+    })
+
+
+@app.route('/api/trade/fulfill', methods=['POST'])
+def fulfill_trade():
+    """Swaps ownership and removes the trade request."""
+    data = request.get_json()
+    trade_id = data.get('trade_id')
+    fulfilling_ids = data.get('fulfilling_ids', [])
+
+    if not trade_id or not fulfilling_ids:
+        return jsonify({"message": "Missing trade ID or fulfilling Pokemon IDs."}), 400
+
+    trade_obj_id = ObjectId(trade_id)
+    fulfilling_obj_ids = [ObjectId(p_id) for p_id in fulfilling_ids]
+    
+    # 1. Retrieve the trade request
+    trade = mongo.db.trade.find_one({'_id': trade_obj_id})
+    if not trade:
+        return jsonify({"message": "Trade request not found."}), 404
+        
+    if len(fulfilling_ids) != trade['looking_for_count']:
+        return jsonify({"message": "You must offer the exact number of Pokemon requested."}), 400
+
+    # 2. Unlock/Swap: The items being offered in the *original* trade
+    original_offering_obj_ids = [ObjectId(p_id) for p_id in trade['offering_ids']]
+    
+    # A. Original Creator (e.g., TrainerB) receives current_player's (TrainerA's) Pokemon
+    mongo.db.pokemon.update_many(
+        {'_id': {'$in': fulfilling_obj_ids}, 'player': session['email']},
+        {'$set': {'player': trade['creator'], 'locked': False}}
+    )
+    
+    # B. current_player (TrainerA) receives the Original Creator's (TrainerB's) Pokemon
+    mongo.db.pokemon.update_many(
+        {'_id': {'$in': original_offering_obj_ids}},
+        {'$set': {'player': session['email'], 'locked': False}}
+    )
+
+    # 3. Delete the fulfilled trade request
+    mongo.db.trade.delete_one({'_id': trade_obj_id})
+
+    return jsonify({
+        "message": "Trade successful! Pokémon swapped and ownership transferred.",
+        "traded_in": trade['offering_ids'],
+        "traded_out": fulfilling_ids
     })
 
 if __name__ == '__main__':
