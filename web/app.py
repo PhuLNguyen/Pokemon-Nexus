@@ -111,6 +111,7 @@ def run_gatcha():
     
     # Define a pool of possible gatcha pulls
     # Add the player's email to associate the Pokemon with the user
+    """
     gatcha_pool = [
         {"player":session("email"), "name": "Squirtle", "atk": 48, "def": 65, "hp": 44, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png"},
         {"player":session("email"), "name": "Jigglypuff", "atk": 45, "def": 20, "hp": 115, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/39.png"},
@@ -122,7 +123,17 @@ def run_gatcha():
     
     # Save the new Pokemon to the database
     mongo.db.pokemon.insert_one(new_pokemon)
+    """
+
+    gatcha_pool = [
+        {"name": "Squirtle", "atk": 48, "def": 65, "hp": 44, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png"},
+        {"name": "Jigglypuff", "atk": 45, "def": 20, "hp": 115, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/39.png"},
+        {"name": "Snorlax", "atk": 110, "def": 65, "hp": 160, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/143.png"}
+    ]
     
+    # Select a random Pokemon from the pool
+    new_pokemon = random.choice(gatcha_pool)
+
     # Return the newly caught Pokemon data
     return jsonify({"message": "Gatcha successful!", "new_pokemon": new_pokemon})
 
