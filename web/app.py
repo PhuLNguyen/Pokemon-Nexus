@@ -2,6 +2,7 @@ from flask import Flask, request, render_template, redirect, url_for, flash, jso
 from flask_cors import CORS
 from flask_pymongo import PyMongo
 from werkzeug.security import generate_password_hash, check_password_hash # Recommended for real apps
+from bson.objectid import ObjectId # Import for converting string IDs back to ObjectId
 import os
 import random
 
@@ -110,6 +111,28 @@ def get_inventory():
     """Returns a list of all Pokemon in the player inventory."""
     inventory = list(mongo.db.pokemon.find({'player': session['email']}))
     return jsonify(inventory)
+
+@app.route('/api/release', methods=['DELETE'])
+def release_pokemon():
+    """Deletes multiple Pokemon documents based on their unique IDs."""
+    data = request.get_json()
+    pokemon_ids_to_release = data.get('ids', [])
+
+    if not pokemon_ids_to_release:
+        return jsonify({"message": "No Pokemon IDs provided for release."}), 400
+
+    # Convert string IDs back to MongoDB ObjectId objects
+    object_ids = [ObjectId(p_id) for p_id in pokemon_ids_to_release]
+    
+    # Use $in operator to find all documents whose _id is in the list
+    result = mongo.db.pokemon.delete_many({
+        '_id': {'$in': object_ids}
+    })
+
+    return jsonify({
+        "message": f"Successfully released {result.deleted_count} Pokemon!",
+        "deleted_count": result.deleted_count
+    })
 
 @app.route('/api/gatcha', methods=['POST'])
 def run_gatcha():

@@ -139,11 +139,15 @@
 
         function renderInventory(pokemonList) {
             if (pokemonList.length === 0) {
-                return `<h2>Inventory Empty</h2><p>You haven't caught any Pokemon yet!</p>`;
+                return `<h2>Inventory Empty</h2><p>You haven't caught any Pokemon yet! Go use the Gatcha!</p>`;
             }
 
+            console.log("Rendering inventory:", pokemonList);
+
+            // Create a form to wrap the inventory items for submission
             const inventoryHtml = pokemonList.map(p => `
-                <div class="pokemon-card" style="display:inline-block; margin: 10px;">
+                <div class="pokemon-card" style="display:inline-block; margin: 10px; position: relative;">
+                    <input type="checkbox" name="pokemon_id" value="${p._id.$oid}" class="release-checkbox" style="position: absolute; top: 10px; left: 10px; width: 20px; height: 20px;">
                     <h3>${p.name}</h3>
                     <img src="${p.image}" alt="${p.name}">
                     <ul class="stat-list">
@@ -154,10 +158,54 @@
                 </div>
             `).join('');
 
+            // Add a form and submit button for bulk release
             return `
                 <h2>Your Pokemon Inventory (${pokemonList.length} Caught)</h2>
-                <div style="display:flex; flex-wrap:wrap; justify-content:center;">${inventoryHtml}</div>
+                <form id="release-form" onsubmit="return false;"> 
+                    <div style="display:flex; flex-wrap:wrap; justify-content:center;">${inventoryHtml}</div>
+                    <button type="button" onclick="handleRelease()" style="margin-top: 20px; padding: 10px 30px; background-color: #5cb85c; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        Confirm Release Selected
+                    </button>
+                </form>
             `;
+        }
+
+        async function handleRelease() {
+            const checkboxes = document.querySelectorAll('#release-form input[name="pokemon_id"]:checked');
+            const idsToRelease = Array.from(checkboxes).map(cb => cb.value);
+
+            if (idsToRelease.length === 0) {
+                alert("Please select at least one Pokémon to release.");
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to release ${idsToRelease.length} Pokémon? This cannot be undone!`)) {
+                return;
+            }
+
+            actionContainer.innerHTML = `<h2>Releasing ${idsToRelease.length} Pokémon...</h2>`;
+
+            try {
+                const response = await fetch(BASE_URL + 'release', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: idsToRelease })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.message);
+                    // After successful release, immediately reload the inventory view
+                    loadContent('inventory'); 
+                } else {
+                    throw new Error(data.message || 'Failed to release Pokémon.');
+                }
+
+            } catch (error) {
+                actionContainer.innerHTML = `<h2>Release Failed 😞</h2><p>Error: ${error.message}</p>`;
+                console.error("Release error:", error);
+            }
         }
         
         function renderTrade(data) {
@@ -187,7 +235,22 @@
             actionContainer.innerHTML = '<h2>Loading...</h2>';
             
             try {
-                const response = await fetch(BASE_URL + endpoint, { method: method });
+                let url = BASE_URL + endpoint;
+                let fetchOptions = { method: method };
+
+                // The 'release' button/logic uses its own handler (handleRelease), 
+                // but the main loadContent is used here to display the inventory view initially.
+                if (endpoint === 'release') {
+                    // If the user clicks the main release button, we simply load the inventory view
+                    // which contains the form required for the release action.
+                    return loadContent('inventory');
+                }
+                
+                if (endpoint === 'gatcha') {
+                    fetchOptions.method = 'POST';
+                }
+
+                const response = await fetch(url, fetchOptions);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -197,7 +260,6 @@
 
                 let content = '<h2>Content Loaded!</h2>';
                 
-                // Determine which renderer to use based on the endpoint
                 if (endpoint === 'inventory') {
                     content = renderInventory(data);
                 } else if (endpoint === 'gatcha') {
@@ -222,19 +284,15 @@
         dynamicButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const endpoint = button.getAttribute('data-endpoint');
-                let method = 'GET';
                 
-                // Gatcha is a POST request because it changes the database state
-                if (endpoint === 'gatcha') {
-                    method = 'POST';
-                }
-                
-                loadContent(endpoint, method);
+                // Use the generic loadContent function for all dynamic buttons
+                // The handleRelease function is called via the inline onclick on the form button.
+                loadContent(endpoint); 
             });
         });
         
         // Initial message on load
-        actionContainer.innerHTML = '<h1>Client Ready. Start your Python server on port 5000, then click a button!</h1>';
+        actionContainer.innerHTML = '<img src="/static/pokemon_nexus_logo.png" alt="Logo" style="width:500px; margin-bottom:20px;"><h2>Use the buttons below to interact with the game!</h2>';
     </script>
 </body>
 </html>
