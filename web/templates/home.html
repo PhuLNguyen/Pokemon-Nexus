@@ -7,57 +7,18 @@
     <link rel="stylesheet" href="/statics/styles.css">
 </head>
 <body>
-    
     <div id="action-container">
         <h1>Welcome! Please connect to the server (port 5000).</h1>
     </div>
 
     <div class="menu-container">
         <a id="logout-btn" class="menu-button" href="/">Logout</a> 
-
         <button id="inventory-btn" class="menu-button" data-endpoint="inventory">Inventory</button>
         <button id="battle-btn" class="menu-button" data-endpoint="battle">Battle</button>
         <button id="trade-btn" class="menu-button" data-endpoint="trade">Trade</button>
         <button id="gatcha-btn" class="menu-button" data-endpoint="gatcha">Gatcha</button>
     </div>
 
-    <script>
-        const actionContainer = document.getElementById('action-container');
-        const BASE_URL = 'http://localhost:5000/api/'; 
-
-        // --- Renderer Functions ---
-
-        function renderGatchaResult(data) {
-            const p = data.new_pokemon;
-            return `
-                <div class="pokemon-card">
-                    <h2>🎉 Gatcha Pull! You Got: ${p.name}! 🎉</h2>
-                    <img src="${p.image}" alt="${p.name}">
-                    <ul class="stat-list">
-                        <li><strong>HP:</strong> ${p.hp}</li>
-                        <li><strong>ATK:</strong> ${p.atk}</li>
-                        <li><strong>DEF:</strong> ${p.def}</li>
-                    </ul>
-                    <p style="margin-top: 15px;">**This Pokémon has been added to your Inventory!**</p>
-                </div>
-            `;
-        }
-
-        function renderBattle(data) {
-            return `
-                <h2>Battle Queue Status</h2>
-                <p>Status: <strong>${data.status}</strong></p>
-                <p>${data.message}</p>
-                <p>Current Queue Position: <strong>#${data.position}</strong></p>
-            `;
-        }
-
-        </script>
-
-    <!-- By using type="module", you are telling the browser 
-     to treat main.js as an ECMAScript module. 
-     This enables it to correctly resolve and load the dependencies 
-     (api.js, renderer.js, etc.) using the import statements found inside main.js.-->
     <script type="module" src="scripts/main.js"></script>
 </body>
 </html>

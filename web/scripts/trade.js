@@ -25,18 +25,18 @@ export async function loadTradeMenu() {
  * @param {Array<Object>} inventory - The player's available Pokémon.
  */
 export function renderCreateTradeForm(inventory) {
-    window.actionContainer.innerHTML = renderCreateTradeForm(inventory);
+    window.actionContainer.innerHTML = renderCreateTradeForm(inventory, 1);
 }
 
 /**
  * Renders the form for fulfilling an existing trade request.
  */
 export async function renderFulfillTradeForm(tradeId, requestedCount, creator) {
+    // requestedCount will always be 1, but we keep it for now as a parameter for consistency
     window.actionContainer.innerHTML = '<h2>Loading Inventory...</h2>';
     try {
-        // We re-fetch inventory here to ensure we have the most up-to-date availability
         const inventory = await API.getInventory();
-        window.actionContainer.innerHTML = renderFulfillTradeForm(tradeId, requestedCount, creator, inventory);
+        window.actionContainer.innerHTML = renderFulfillTradeForm(tradeId, 1, creator, inventory);
     } catch (error) {
         window.actionContainer.innerHTML = `<h2>Error loading inventory for trade fulfillment.</h2><p>${error.message}</p>`;
     }
@@ -51,19 +51,20 @@ export async function renderFulfillTradeForm(tradeId, requestedCount, creator) {
 export async function handleCreateTrade() {
     const checkboxes = document.querySelectorAll('.create-trade-checkbox:checked');
     const offeringIds = Array.from(checkboxes).map(cb => cb.value);
-    const requestedCount = parseInt(document.getElementById('request-count').value);
-
-    if (offeringIds.length < 1 || offeringIds.length > 5 || requestedCount < 1 || requestedCount > 5) {
-        alert("Selection and request count must be between 1 and 5.");
+    
+    // Validation is simplified: MUST select 1
+    if (offeringIds.length !== 1) {
+        alert("You must select exactly ONE Pokémon to offer for a 1-for-1 trade.");
         return;
     }
 
-    window.actionContainer.innerHTML = `<h2>Sending Trade Request...</h2>`;
+    window.actionContainer.innerHTML = `<h2>Sending 1-for-1 Trade Request...</h2>`;
 
     try {
-        const data = await API.createTrade(offeringIds, requestedCount);
+        // looking_for_count is hardcoded to 1 on the server, but we send 1 to be safe
+        const data = await API.createTrade(offeringIds, 1); 
         alert(data.message);
-        loadTradeMenu(); // Reload the main trade menu
+        loadTradeMenu();
     } catch (error) {
         window.actionContainer.innerHTML = `<h2>Trade Creation Failed 😞</h2><p>Error: ${error.message}</p>`;
         console.error("Trade creation error:", error);
@@ -76,18 +77,19 @@ export async function handleCreateTrade() {
 export async function handleFulfillTrade(tradeId, requiredCount) {
     const checkboxes = document.querySelectorAll('.fulfill-trade-checkbox:checked');
     const fulfillingIds = Array.from(checkboxes).map(cb => cb.value);
-
-    if (fulfillingIds.length !== requiredCount) {
-        alert(`You must select exactly ${requiredCount} Pokémon.`);
+    
+    // Validation is simplified: MUST select 1
+    if (fulfillingIds.length !== 1) {
+        alert(`You must select exactly ONE Pokémon to fulfill this 1-for-1 trade.`);
         return;
     }
 
-    window.actionContainer.innerHTML = `<h2>Fulfilling Trade...</h2>`;
+    window.actionContainer.innerHTML = `<h2>Fulfilling 1-for-1 Trade...</h2>`;
 
     try {
         const data = await API.fulfillTrade(tradeId, fulfillingIds);
         alert(data.message);
-        loadTradeMenu(); // Reload the main trade menu
+        loadTradeMenu();
     } catch (error) {
         window.actionContainer.innerHTML = `<h2>Trade Fulfillment Failed 😞</h2><p>Error: ${error.message}</p>`;
         console.error("Trade fulfillment error:", error);
@@ -98,14 +100,18 @@ export async function handleFulfillTrade(tradeId, requiredCount) {
  * Logic for selecting/unselecting Pokémon in the trade forms.
  */
 export function toggleTradeSelection(element, type, max) {
+    // Max selection is now fixed at 1 for all trade actions
+    max = 1; 
+    
     const checkbox = element.querySelector('.trade-checkbox');
     const overlay = element.querySelector('.selection-overlay');
     
     const selected = document.querySelectorAll(`.${type}-trade-checkbox:checked`);
     let isCurrentlySelected = checkbox.checked;
     
+    // If attempting to select when one is already selected (and the max is 1)
     if (!isCurrentlySelected && selected.length >= max) {
-        alert(`You can only select up to ${max} Pokémon for this action.`);
+        alert(`You can only select ONE Pokémon for a 1-for-1 trade.`);
         return; 
     }
 
@@ -116,13 +122,12 @@ export function toggleTradeSelection(element, type, max) {
     
     const statusElement = document.getElementById('selection-status');
     if (statusElement) {
-        statusElement.textContent = (type === 'create') 
-            ? `Selected: ${finalSelected.length}` 
-            : `Selected: ${finalSelected.length} / ${max}`;
+        statusElement.textContent = `Selected: ${finalSelected.length} / 1`;
     }
     
+    // Only enable fulfill button if exactly 1 is selected
     if (type === 'fulfill') {
         const btn = document.getElementById('fulfill-confirm-btn');
-        if (btn) btn.disabled = (finalSelected.length !== max);
+        if (btn) btn.disabled = (finalSelected.length !== 1);
     }
 }

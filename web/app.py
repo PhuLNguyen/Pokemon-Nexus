@@ -195,75 +195,73 @@ def get_trade_menu_data():
 
 @app.route('/api/trade/create', methods=['POST'])
 def create_trade():
-    """Locks selected Pokemon and creates a new trade request."""
+    """Locks the selected single Pokemon and creates a new trade request, requesting one in return."""
     data = request.get_json()
     offering_ids = data.get('offering_ids', [])
-    looking_for_count = data.get('looking_for_count')
-
-    if not offering_ids or looking_for_count is None or looking_for_count < 1:
-        return jsonify({"message": "Invalid trade data."}), 400
-
-    object_ids = [ObjectId(p_id) for p_id in offering_ids]
     
-    # 1. Lock the Pokemon for trade
-    lock_result = mongo.db.pokemon.update_many(
-        {'_id': {'$in': object_ids}, 'player': session['email'], 'locked': False},
+    # 1. Enforce 1-for-1 rule: must offer exactly one Pokemon
+    if len(offering_ids) != 1:
+        return jsonify({"message": "You must offer exactly one Pokémon for a 1-for-1 trade."}), 400
+
+    object_id = ObjectId(offering_ids[0])
+    
+    # 2. Lock the Pokemon for trade
+    lock_result = mongo.db.pokemon.update_one(
+        {'_id': object_id, 'player': session['email'], 'locked': False},
         {'$set': {'locked': True}}
     )
 
-    if lock_result.modified_count != len(object_ids):
-        # This handles if some were already locked or didn't belong to the player
-        return jsonify({"message": "Could not lock all selected Pokemon. Operation aborted."}), 409
+    if lock_result.modified_count != 1:
+        return jsonify({"message": "Could not lock the selected Pokémon. It may be locked or not yours."}), 409
 
-    # 2. Create the trade request document
+    # 3. Create the trade request document (always looking for 1)
     trade_request = {
         "creator": session['email'],
-        "offering_ids": offering_ids, # Store as strings for easier retrieval
-        "looking_for_count": looking_for_count,
+        "offering_ids": offering_ids, 
+        "looking_for_count": 1, # Fixed at 1
         "status": "pending",
         "timestamp": datetime.now()
     }
     mongo.db.trade.insert_one(trade_request)
     
     return jsonify({
-        "message": f"Trade request created! {len(offering_ids)} Pokemon locked.",
-        "locked_count": lock_result.modified_count
+        "message": "1-for-1 Trade request created! Your Pokémon is locked.",
+        "locked_count": 1
     })
 
 
 @app.route('/api/trade/fulfill', methods=['POST'])
 def fulfill_trade():
-    """Swaps ownership and removes the trade request."""
+    """Requires exactly one Pokémon to fulfill the trade, swaps ownership, and removes the request."""
     data = request.get_json()
     trade_id = data.get('trade_id')
     fulfilling_ids = data.get('fulfilling_ids', [])
 
-    if not trade_id or not fulfilling_ids:
-        return jsonify({"message": "Missing trade ID or fulfilling Pokemon IDs."}), 400
+    if not trade_id or len(fulfilling_ids) != 1:
+        return jsonify({"message": "Missing trade ID or you must offer exactly one Pokémon."}), 400
 
     trade_obj_id = ObjectId(trade_id)
-    fulfilling_obj_ids = [ObjectId(p_id) for p_id in fulfilling_ids]
+    fulfilling_obj_id = ObjectId(fulfilling_ids[0])
     
     # 1. Retrieve the trade request
     trade = mongo.db.trade.find_one({'_id': trade_obj_id})
-    if not trade:
-        return jsonify({"message": "Trade request not found."}), 404
-        
-    if len(fulfilling_ids) != trade['looking_for_count']:
-        return jsonify({"message": "You must offer the exact number of Pokemon requested."}), 400
-
-    # 2. Unlock/Swap: The items being offered in the *original* trade
-    original_offering_obj_ids = [ObjectId(p_id) for p_id in trade['offering_ids']]
+    if not trade or trade.get('looking_for_count') != 1:
+        return jsonify({"message": "Trade request not found or is not a 1-for-1 trade."}), 404
     
-    # A. Original Creator (e.g., TrainerB) receives current_player's (TrainerA's) Pokemon
-    mongo.db.pokemon.update_many(
-        {'_id': {'$in': fulfilling_obj_ids}, 'player': session['email']},
+    # The Pokemon offered in the original trade
+    original_offered_id = ObjectId(trade['offering_ids'][0])
+    
+    # 2. Perform the swap using two atomic updates
+    
+    # A. Original Creator (e.g., TrainerB) receives CURRENT_PLAYER's (TrainerA's) Pokemon
+    mongo.db.pokemon.update_one(
+        {'_id': fulfilling_obj_id, 'player': session['email']},
         {'$set': {'player': trade['creator'], 'locked': False}}
     )
     
-    # B. current_player (TrainerA) receives the Original Creator's (TrainerB's) Pokemon
-    mongo.db.pokemon.update_many(
-        {'_id': {'$in': original_offering_obj_ids}},
+    # B. CURRENT_PLAYER (TrainerA) receives the Original Creator's (TrainerB's) Pokemon (and unlocks it)
+    mongo.db.pokemon.update_one(
+        {'_id': original_offered_id},
         {'$set': {'player': session['email'], 'locked': False}}
     )
 
@@ -271,9 +269,9 @@ def fulfill_trade():
     mongo.db.trade.delete_one({'_id': trade_obj_id})
 
     return jsonify({
-        "message": "Trade successful! Pokémon swapped and ownership transferred.",
-        "traded_in": trade['offering_ids'],
-        "traded_out": fulfilling_ids
+        "message": "Trade successful! 1-for-1 Pokémon swap completed.",
+        "traded_in": str(original_offered_id),
+        "traded_out": str(fulfilling_obj_id)
     })
 
 if __name__ == '__main__':

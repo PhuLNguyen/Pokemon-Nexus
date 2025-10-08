@@ -90,7 +90,7 @@ export function renderBattle(data) {
 
 // --- TRADE RENDERERS ---
 
-export function renderTradeMenu(inventory, pendingTrades, currentPlayer, renderCreateTradeForm, renderFulfillTradeForm) {
+export function renderTradeMenu(inventory, pendingTrades, currentPlayer) {
     const inventoryString = JSON.stringify(inventory).replace(/"/g, '&quot;');
     
     const tradeListHtml = pendingTrades.map(trade => {
@@ -98,9 +98,9 @@ export function renderTradeMenu(inventory, pendingTrades, currentPlayer, renderC
         return `
             <li class="trade-request-item" style="border: 1px solid #5bc0de; padding: 15px; margin-bottom: 10px; border-radius: 5px;">
                 <p><strong>Offer ID:</strong> ${trade.id} | From: ${trade.creator}</p>
-                <p><strong>Offering:</strong> ${offeredNames} (${trade.offered_details.length} Total)</p>
-                <p><strong>Requesting:</strong> ${trade.looking_for_count} of YOUR Pokémon</p>
-                <button class="menu-button" style="background-color: #28a745; margin-top: 10px;" onclick="window.renderFulfillTradeForm('${trade.id}', ${trade.looking_for_count}, '${trade.creator}')">Fulfill This Trade</button>
+                <p><strong>Offering:</strong> ${offeredNames} (1 Total)</p>
+                <p><strong>Requesting:</strong> 1 of YOUR Pokémon</p>
+                <button class="menu-button" style="background-color: #28a745; margin-top: 10px;" onclick="window.renderFulfillTradeForm('${trade.id}', 1, '${trade.creator}')">Fulfill This Trade</button>
             </li>
         `;
     }).join('');
@@ -124,7 +124,7 @@ export function renderTradeMenu(inventory, pendingTrades, currentPlayer, renderC
 }
 
 export function renderCreateTradeForm(inventory, handleCreateTrade, loadTradeMenu) {
-    const maxSelection = 5;
+    const maxSelection = 1;
     const inventoryHtml = inventory.map(p => generatePokemonCardHtml(p, 'trade-create')).join('');
 
     return `
@@ -145,24 +145,24 @@ export function renderCreateTradeForm(inventory, handleCreateTrade, loadTradeMen
     `;
 }
 
-export function renderFulfillTradeForm(tradeId, requestedCount, creator, inventory, handleFulfillTrade, loadTradeMenu) {
+export function renderFulfillTradeForm(tradeId, requestedCount, creator, inventory) {
     const availableInventory = inventory.filter(p => !p.locked);
     
-    // Attach requestedCount to the Pokemon object for use in generatePokemonCardHtml
-    const inventoryWithCount = availableInventory.map(p => ({...p, requiredCount: requestedCount}));
+    // We pass 1 to generatePokemonCardHtml for max selection status
+    const inventoryWithCount = availableInventory.map(p => ({...p, requiredCount: 1}));
 
     const inventoryHtml = inventoryWithCount.map(p => generatePokemonCardHtml(p, 'trade-fulfill')).join('');
 
     return `
         <h1>Fulfill Trade Request from ${creator}</h1>
-        <h2>You must select exactly ${requestedCount} Pokémon to complete this trade.</h2>
-        <div id="selection-status">Selected: 0 / ${requestedCount}</div>
+        <h2>You must select exactly ONE Pokémon to complete this trade.</h2>
+        <div id="selection-status">Selected: 0 / 1</div>
 
-        <p>Select your ${requestedCount} Pokémon to send:</p>
+        <p>Select your 1 Pokémon to send:</p>
         <div style="display:flex; flex-wrap:wrap; justify-content:center;">${inventoryHtml || '<p>Your available inventory is empty!</p>'}</div>
         
         <div style="margin-top: 20px;">
-            <button onclick="window.handleFulfillTrade('${tradeId}', ${requestedCount})" class="menu-button" style="background-color: #28a745;" id="fulfill-confirm-btn" disabled>Confirm Fulfillment</button>
+            <button onclick="window.handleFulfillTrade('${tradeId}', 1)" class="menu-button" style="background-color: #28a745;" id="fulfill-confirm-btn" disabled>Confirm Fulfillment</button>
             <button onclick="window.loadContent('trade')" class="menu-button" style="background-color: #6c757d;">Cancel</button>
         </div>
     `;
