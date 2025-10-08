@@ -26,7 +26,7 @@ mongo = PyMongo(app)
 @app.route('/', methods=['GET'])
 def index():
     """Renders the main page with login/register forms."""
-    return render_template('index.html')
+    return render_template('login.html')
 
 
 @app.route('/register', methods=['POST'])
