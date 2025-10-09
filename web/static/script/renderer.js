@@ -123,7 +123,7 @@ export function renderTradeMenu(inventory, pendingTrades, currentPlayer) {
     `;
 }
 
-export function generateCreateTradeFormHTML(inventory) {
+export function renderCreateTradeFormHTML(inventory) {
     const maxSelection = 1;
     const inventoryHtml = inventory.map(p => generatePokemonCardHtml(p, 'trade-create')).join('');
 

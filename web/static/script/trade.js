@@ -1,5 +1,5 @@
 import { API } from './api.js';
-import { renderTradeMenu, generateCreateTradeFormHTML, renderFulfillTradeFormHTML } from './renderer.js';
+import { renderTradeMenu, renderCreateTradeFormHTML, renderFulfillTradeFormHTML } from './renderer.js';
 
 /**
  * Loads the main trade menu view.
@@ -25,7 +25,7 @@ export async function loadTradeMenu() {
  * @param {Array<Object>} inventory - The player's available Pokémon.
  */
 export function renderCreateTradeForm(inventory) {
-    window.actionContainer.innerHTML = generateCreateTradeFormHTML(inventory, 1);
+    window.actionContainer.innerHTML = renderCreateTradeFormHTML(inventory, 1);
 }
 
 /**
