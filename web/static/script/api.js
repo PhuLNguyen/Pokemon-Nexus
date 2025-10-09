@@ -33,22 +33,25 @@ async function callApi(endpoint, method, bodyData = null) {
 
 // Specific API functions
 export const API = {
+    // Inventory related APIs
     getInventory: () => callApi('inventory', 'GET'),
-    runGatcha: () => callApi('gatcha', 'POST'),
-    getTradeData: () => callApi('trade', 'GET'),
-    getBattleData: () => callApi('battle', 'GET'),
-    
     releasePokemon: (ids) => callApi('release', 'DELETE', { ids }),
-    
+
+    // Catch Pokemon API
+    runGatcha: () => callApi('gatcha', 'POST'),
+
+    // Trade related APIs
+    getTradeData: () => callApi('trade', 'GET'),
     createTrade: (offering_ids, looking_for_count) => 
-        callApi('trade/create', 'POST', { offering_ids, looking_for_count }),
-        
+        callApi('trade/create', 'POST', { offering_ids, looking_for_count }), 
     fulfillTrade: (trade_id, fulfilling_ids) => 
         callApi('trade/fulfill', 'PUT', { trade_id, fulfilling_ids }),
 
+    // User related APIs
     getUserInfo: () => callApi('user/info', "GET"), 
     
-    // Battle queue functions
+    // Battle related APIs
+    getBattleData: () => callApi('battle', 'GET'),
     enterQueue: () => callApi('battle/queue', 'POST'), 
     getBattleResult: (battleId) => callApi(`battle/result/${battleId}`, 'GET') 
 };
