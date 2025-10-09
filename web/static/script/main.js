@@ -1,6 +1,6 @@
 // The orchestrator script that ties together various modules for the game client
 
-import { renderBattle } from './renderer.js';
+import { renderBattle, renderGatchaResult } from './renderer.js';
 import { loadInventoryView, handleRelease } from './inventory.js';
 import { loadTradeMenu, renderCreateTradeForm, renderFulfillTradeForm, handleCreateTrade, handleFulfillTrade, toggleTradeSelection } from './trade.js';
 import { API } from './api.js'; // Ensure api.js is imported for generic calls
