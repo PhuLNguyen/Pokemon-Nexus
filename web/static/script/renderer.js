@@ -123,7 +123,7 @@ export function renderTradeMenu(inventory, pendingTrades, currentPlayer) {
     `;
 }
 
-export function renderCreateTradeForm(inventory, handleCreateTrade, loadTradeMenu) {
+export function generateCreateTradeFormHTML(inventory) {
     const maxSelection = 1;
     const inventoryHtml = inventory.map(p => generatePokemonCardHtml(p, 'trade-create')).join('');
 
@@ -145,7 +145,7 @@ export function renderCreateTradeForm(inventory, handleCreateTrade, loadTradeMen
     `;
 }
 
-export function renderFulfillTradeForm(tradeId, requestedCount, creator, inventory) {
+export function renderFulfillTradeFormHTML(tradeId, requestedCount, creator, inventory) {
     const availableInventory = inventory.filter(p => !p.locked);
     
     // We pass 1 to generatePokemonCardHtml for max selection status
