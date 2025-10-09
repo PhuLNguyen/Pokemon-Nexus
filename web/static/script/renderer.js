@@ -4,34 +4,34 @@ function generatePokemonCardHtml(p, type) {
     const inventoryString = JSON.stringify(p).replace(/"/g, '&quot;');
     
     let selectionElement = '';
-    let lockStatus = p.locked ? ' (LOCKED)' : '';
+    let lockStatus = pokemon.locked ? ' (LOCKED)' : '';
 
     if (type === 'inventory') {
-        // p._id.$oid is the ObjectID in MongoDB
-        selectionElement = `<input type="checkbox" name="pokemon_id" value="${p._id.$oid}" class="release-checkbox" style="position: absolute; top: 10px; left: 10px; width: 20px; height: 20px;" ${p.locked ? 'disabled' : ''}>`;
+        // pokemon._id.$oid is the ObjectID in MongoDB
+        selectionElement = `<input type="checkbox" name="pokemon_id" value="${pokemon._id.$oid}" class="release-checkbox" style="position: absolute; top: 10px; left: 10px; width: 20px; height: 20px;" ${pokemon.locked ? 'disabled' : ''}>`;
     } else if (type === 'trade-create' || type === 'trade-fulfill') {
         // ToggleTradeSelection is a global function defined in main.js/window object
-        const max = type === 'trade-create' ? 5 : p.requiredCount; 
+        const max = type === 'trade-create' ? 5 : pokemon.requiredCount; 
         const className = type === 'trade-create' ? 'create-trade-checkbox' : 'fulfill-trade-checkbox';
 
         selectionElement = `
-            <div class="pokemon-card" style="display:inline-block; margin: 5px; position: relative; cursor: pointer;" data-id="${p._id.$oid}" onclick="window.toggleTradeSelection(this, '${type === 'trade-create' ? 'create' : 'fulfill'}', ${max})">
-                <input type="checkbox" class="trade-checkbox ${className}" value="${p._id.$oid}" style="display: none;">
+            <div class="pokemon-card" style="display:inline-block; margin: 5px; position: relative; cursor: pointer;" data-id="${pokemon._id.$oid}" onclick="window.toggleTradeSelection(this, '${type === 'trade-create' ? 'create' : 'fulfill'}', ${max})">
+                <input type="checkbox" class="trade-checkbox ${className}" value="${pokemon._id.$oid}" style="display: none;">
                 <div class="selection-overlay">SELECTED</div>
-                <h3>${p.name}</h3>
-                <img src="${p.image}" alt="${p.name}">
+                <h3>${pokemon.name}</h3>
+                <img src="${pokemon.image}" alt="${pokemon.name}">
             </div>
         `;
     }
     
     // Base card structure
     const cardContent = `
-        <h3>${p.name}${lockStatus}</h3>
-        <img src="${p.image}" alt="${p.name}">
+        <h3>${pokemon.name}${lockStatus}</h3>
+        <img src="${pokemon.image}" alt="${pokemon.name}">
         <ul class="stat-list">
-            <li>HP: ${p.hp}</li>
-            <li>ATK: ${p.atk}</li>
-            <li>DEF: ${p.def}</li>
+            <li>HP: ${pokemon.hp}</li>
+            <li>ATK: ${pokemon.atk}</li>
+            <li>DEF: ${pokemon.def}</li>
         </ul>
     `;
     
@@ -48,12 +48,12 @@ export function renderGatchaResult(data) {
     const p = data.new_pokemon;
     return `
         <div class="pokemon-card">
-            <h2>🎉 Gatcha Pull! You Got: ${p.name}! 🎉</h2>
-            <img src="${p.image}" alt="${p.name}">
+            <h2>🎉 Gatcha Pull! You Got: ${pokemon.name}! 🎉</h2>
+            <img src="${pokemon.image}" alt="${pokemon.name}">
             <ul class="stat-list">
-                <li><strong>HP:</strong> ${p.hp}</li>
-                <li><strong>ATK:</strong> ${p.atk}</li>
-                <li><strong>DEF:</strong> ${p.def}</li>
+                <li><strong>HP:</strong> ${pokemon.hp}</li>
+                <li><strong>ATK:</strong> ${pokemon.atk}</li>
+                <li><strong>DEF:</strong> ${pokemon.def}</li>
             </ul>
             <p style="margin-top: 15px;">**This Pokémon has been added to your Inventory!**</p>
         </div>
@@ -95,7 +95,7 @@ export function renderTradeMenu(inventory, pendingTrades, currentPlayer) {
     const inventoryString = JSON.stringify(inventory).replace(/"/g, '&quot;');
     
     const tradeListHtml = pendingTrades.map(trade => {
-        const offeredNames = trade.offered_details.map(p => p.name).join(', ');
+        const offeredNames = trade.offered_details.map(p => pokemon.name).join(', ');
         return `
             <li class="trade-request-item" style="border: 1px solid #5bc0de; padding: 15px; margin-bottom: 10px; border-radius: 5px;">
                 <p><strong>Offer ID:</strong> ${trade.id} | From: ${trade.creator}</p>
@@ -147,7 +147,7 @@ export function renderCreateTradeFormHTML(inventory) {
 }
 
 export function renderFulfillTradeFormHTML(tradeId, requestedCount, creator, inventory) {
-    const availableInventory = inventory.filter(p => !p.locked);
+    const availableInventory = inventory.filter(p => !pokemon.locked);
     
     // We pass 1 to generatePokemonCardHtml for max selection status
     const inventoryWithCount = availableInventory.map(p => ({...p, requiredCount: 1}));
