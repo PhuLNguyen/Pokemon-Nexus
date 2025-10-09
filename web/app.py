@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash # Reco
 from bson.objectid import ObjectId # Import for converting string IDs back to ObjectId
 import os
 import random
-import logging
+import logging # app.logger.info("Hello World!")
 from datetime import datetime
 
 # --- 1. SETUP AND CONFIGURATION ---
