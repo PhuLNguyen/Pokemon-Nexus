@@ -167,10 +167,8 @@ def get_battle_queue():
 def get_trade_menu_data():
     """Returns the current player's inventory and all pending trades."""
     # 1. Get current player's available (unlocked) inventory
-    available_inventory = []
-    for doc in mongo.db.pokemon.find({"player": session['email'], "locked": False}):
-        doc['id'] = str(doc.pop('_id')) 
-        available_inventory.append(doc)
+    available_inventory = mongo.db.pokemon.find({"player": session['email'], "locked": False})
+    available_inventory = list(available_inventory)
     
     # 2. Get all pending trades
     pending_trades = []
