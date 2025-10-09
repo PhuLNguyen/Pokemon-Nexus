@@ -5,6 +5,7 @@ http://localhost:5000/
 docker compose down --volumes
 
 ## TODO
+- Display current user on home page 
 - create logout api to delete user session data on server side
 - trade feature bug:
 	a. allow creator to trade their own pokemon
