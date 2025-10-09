@@ -230,7 +230,7 @@ def create_trade():
     })
 
 
-@app.route('/api/trade/fulfill', methods=['POST'])
+@app.route('/api/trade/fulfill', methods=['PUT'])
 def fulfill_trade():
     """Requires exactly one Pokémon to fulfill the trade, swaps ownership, and removes the request."""
     data = request.get_json()

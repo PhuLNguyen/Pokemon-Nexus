@@ -7,7 +7,7 @@ const BASE_URL = 'http://localhost:5000/api/';
  * @param {Object} bodyData - Data to send with a POST request.
  * @returns {Promise<Object>} - The JSON response data.
  */
-async function callApi(endpoint, method = 'GET', bodyData = null) {
+async function callApi(endpoint, method, bodyData = null) {
     const url = BASE_URL + endpoint;
     const fetchOptions = {
         method: method,
@@ -16,7 +16,7 @@ async function callApi(endpoint, method = 'GET', bodyData = null) {
         }
     };
 
-    if (bodyData && method === 'POST') {
+    if (bodyData) {
         fetchOptions.body = JSON.stringify(bodyData);
     }
 
@@ -33,16 +33,16 @@ async function callApi(endpoint, method = 'GET', bodyData = null) {
 
 // Specific API functions
 export const API = {
-    getInventory: () => callApi('inventory'),
+    getInventory: () => callApi('inventory', 'GET'),
     runGatcha: () => callApi('gatcha', 'POST'),
-    getTradeData: () => callApi('trade'),
-    getBattleData: () => callApi('battle'),
+    getTradeData: () => callApi('trade', 'GET'),
+    getBattleData: () => callApi('battle', 'GET'),
     
-    releasePokemon: (ids) => callApi('release', 'POST', { ids }),
+    releasePokemon: (ids) => callApi('release', 'DELETE', { ids }),
     
     createTrade: (offering_ids, looking_for_count) => 
         callApi('trade/create', 'POST', { offering_ids, looking_for_count }),
         
     fulfillTrade: (trade_id, fulfilling_ids) => 
-        callApi('trade/fulfill', 'POST', { trade_id, fulfilling_ids })
+        callApi('trade/fulfill', 'PUT', { trade_id, fulfilling_ids })
 };
