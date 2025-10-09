@@ -118,13 +118,10 @@ def release_pokemon():
 
     if not pokemon_ids_to_release:
         return jsonify({"message": "No Pokemon IDs provided for release."}), 400
-
-    # Convert string IDs back to MongoDB ObjectId objects
-    object_ids = [ObjectId(p_id) for p_id in pokemon_ids_to_release]
     
     # Use $in operator to find all documents whose _id is in the list
     result = mongo.db.pokemon.delete_many({
-        '_id': {'$in': object_ids}
+        '_id': {'$in': pokemon_ids_to_release}
     })
 
     return jsonify({

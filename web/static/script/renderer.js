@@ -7,7 +7,8 @@ function generatePokemonCardHtml(p, type) {
     let lockStatus = p.locked ? ' (LOCKED)' : '';
 
     if (type === 'inventory') {
-        selectionElement = `<input type="checkbox" name="pokemon_id" value="${p.id}" class="release-checkbox" style="position: absolute; top: 10px; left: 10px; width: 20px; height: 20px;" ${p.locked ? 'disabled' : ''}>`;
+        // p._id is the ObjectID in MongoDB
+        selectionElement = `<input type="checkbox" name="pokemon_id" value="${p._id}" class="release-checkbox" style="position: absolute; top: 10px; left: 10px; width: 20px; height: 20px;" ${p.locked ? 'disabled' : ''}>`;
     } else if (type === 'trade-create' || type === 'trade-fulfill') {
         // ToggleTradeSelection is a global function defined in main.js/window object
         const max = type === 'trade-create' ? 5 : p.requiredCount; 
