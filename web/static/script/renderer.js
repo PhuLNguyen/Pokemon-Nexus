@@ -7,16 +7,16 @@ function generatePokemonCardHtml(p, type) {
     let lockStatus = p.locked ? ' (LOCKED)' : '';
 
     if (type === 'inventory') {
-        // p._id is the ObjectID in MongoDB
-        selectionElement = `<input type="checkbox" name="pokemon_id" value="${p._id}" class="release-checkbox" style="position: absolute; top: 10px; left: 10px; width: 20px; height: 20px;" ${p.locked ? 'disabled' : ''}>`;
+        // p._id.$oid is the ObjectID in MongoDB
+        selectionElement = `<input type="checkbox" name="pokemon_id" value="${p._id.$oid}" class="release-checkbox" style="position: absolute; top: 10px; left: 10px; width: 20px; height: 20px;" ${p.locked ? 'disabled' : ''}>`;
     } else if (type === 'trade-create' || type === 'trade-fulfill') {
         // ToggleTradeSelection is a global function defined in main.js/window object
         const max = type === 'trade-create' ? 5 : p.requiredCount; 
         const className = type === 'trade-create' ? 'create-trade-checkbox' : 'fulfill-trade-checkbox';
 
         selectionElement = `
-            <div class="pokemon-card" style="display:inline-block; margin: 5px; position: relative; cursor: pointer;" data-id="${p._id}" onclick="window.toggleTradeSelection(this, '${type === 'trade-create' ? 'create' : 'fulfill'}', ${max})">
-                <input type="checkbox" class="trade-checkbox ${className}" value="${p._id}" style="display: none;">
+            <div class="pokemon-card" style="display:inline-block; margin: 5px; position: relative; cursor: pointer;" data-id="${p._id.$oid}" onclick="window.toggleTradeSelection(this, '${type === 'trade-create' ? 'create' : 'fulfill'}', ${max})">
+                <input type="checkbox" class="trade-checkbox ${className}" value="${p._id.$oid}" style="display: none;">
                 <div class="selection-overlay">SELECTED</div>
                 <h3>${p.name}</h3>
                 <img src="${p.image}" alt="${p.name}">
