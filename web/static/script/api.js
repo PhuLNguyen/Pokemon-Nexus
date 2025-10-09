@@ -2,9 +2,9 @@ const BASE_URL = 'http://localhost:5000/api/';
 
 /**
  * Handles all generic GET/POST API calls.
- * @param {string} endpoint - The API endpoint (e.g., 'inventory', 'gatcha').
- * @param {string} method - The HTTP method ('GET' or 'POST').
- * @param {Object} bodyData - Data to send with a POST request.
+ * @param {string} endpoint - The API endpoint (e.g., 'inventory', 'gatcha', etc...).
+ * @param {string} method - The HTTP method ('GET', 'POST', 'PUT', 'DELETE').
+ * @param {Object} bodyData - Data to send with a request.
  * @returns {Promise<Object>} - The JSON response data.
  */
 async function callApi(endpoint, method, bodyData = null) {
