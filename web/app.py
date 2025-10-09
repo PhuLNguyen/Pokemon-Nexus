@@ -3,6 +3,7 @@ from flask_cors import CORS
 from flask_pymongo import PyMongo
 from werkzeug.security import generate_password_hash, check_password_hash # Recommended for real apps
 from bson.objectid import ObjectId # Import for converting string IDs back to ObjectId
+from math import ceil 
 import os
 import random
 import logging # app.logger.info("Hello World!")
@@ -20,7 +21,11 @@ app.secret_key = os.getenv("SECRET_KEY", "a_development_fallback_key")
 # Initialize Flask-PyMongo
 mongo = PyMongo(app)
 
-# The 'players' collection will be accessed as mongo.db.players
+# --- Global Battle Queue Management (Simplified In-Memory) ---
+BATTLE_QUEUE = []
+BATTLES_IN_PROGRESS = {} # Stores ongoing battle IDs and results
+XP_PER_WIN = 100
+LEVEL_UP_XP = 500
 
 # --- 2. ROUTES FOR USER INTERACTION ---
 
@@ -55,7 +60,12 @@ def register():
         
         user_data = {
             "email": email,
-            "password": password # ⚠️ DANGER: Replace with hashed password in production
+            "password": password, # ⚠️ DANGER: Replace with hashed password in production
+            "level": 1,
+            "xp": 0,
+            "wins": 0,
+            "losses": 0,
+            "created_at": datetime.now()
         }
         
         # Insert the new document into the 'players' collection
@@ -272,6 +282,160 @@ def fulfill_trade():
         "traded_in": str(original_offered_id),
         "traded_out": str(fulfilling_obj_id)
     })
+
+# --- API Route: Get User Info ---
+
+@app.route('/api/user/info', methods=['GET'])
+def get_user_info():
+    """Returns the current player's level and XP."""
+    user = mongo.db.players.find_one({"email": session['email']})
+    if not user:
+        return jsonify({"message": "User not found."}), 404
+    
+    return jsonify({
+        "email": user.get('email', "email-placeholder"),
+        "level": user.get('level', 1),
+        "xp": user.get('xp', 0),
+        "xp_to_next_level": LEVEL_UP_XP - user.get('xp', 0),
+        "wins": user.get('wins', 0),
+        "losses": user.get('losses', 0)
+    })
+
+# --- Helper Functions ---
+
+def update_user_xp(user_name, is_winner):
+    """Adds XP to the user and handles leveling up."""
+    user = mongo.db.players.find_one({"email": user_name})
+    if not user:
+        return
+
+    xp_gained = XP_PER_WIN if is_winner else 10 # Small XP gain for participating
+    
+    new_xp = user['xp'] + xp_gained
+    new_level = user['level']
+    level_increase = 0
+    
+    # Simple Level Up Logic
+    while new_xp >= LEVEL_UP_XP:
+        new_xp -= LEVEL_UP_XP
+        new_level += 1
+        level_increase += 1
+
+    update_fields = {
+        '$set': {
+            'level': new_level, 
+            'xp': new_xp,
+        },
+        '$inc': {
+            'wins': 1 if is_winner else 0,
+            'losses': 1 if not is_winner else 0
+        }
+    }
+    mongo.db.players.update_one({"email": user_name}, update_fields)
+    
+    return xp_gained, level_increase
+
+def simulate_battle(player_mon, opponent_mon):
+    """Simulates the battle based on ATK/DEF, returns true if player_mon wins."""
+    # Simplified simulation: higher HP Pokémon wins if ATK/DEF difference is small.
+    # We still use the existing logic for damage calculation.
+    
+    p1 = {"doc": player_mon, "hp": player_mon['hp']}
+    p2 = {"doc": opponent_mon, "hp": opponent_mon['hp']}
+    
+    p1_atk = p1['doc']['atk']
+    p2_atk = p2['doc']['atk']
+    p1_def = p1['doc']['def']
+    p2_def = p2['doc']['def']
+
+    # Determine who attacks first (higher ATK stat)
+    attacker = p1 if p1_atk >= p2_atk else p2
+    defender = p2 if p1_atk >= p2_atk else p1
+    
+    # Battle loop (max 10 rounds to prevent infinite loop just in case)
+    for _ in range(20):
+        if p1['hp'] <= 0 or p2['hp'] <= 0:
+            break
+            
+        defender_def = defender['doc']['def']
+        damage = max(1, attacker['doc']['atk'] - ceil(defender_def / 2))
+        defender['hp'] -= damage
+        
+        # Swap roles
+        attacker, defender = defender, attacker
+
+    return p1['hp'] > 0 # Returns True if player's mon (p1) wins
+
+# --- API Route: Battle Queue ---
+
+@app.route('/api/battle/queue', methods=['POST'])
+def enter_queue():
+    """Handles queue entry, matchmaking, and battle simulation."""
+    global BATTLE_QUEUE, BATTLES_IN_PROGRESS
+    
+    # 1. Check if user is already in the queue or a battle
+    if session['email'] in BATTLE_QUEUE:
+        return jsonify({"message": "Already in queue.", "status": "queue", "position": BATTLE_QUEUE.index(session['email']) + 1}), 200
+
+    # 2. Check for an opponent in the queue
+    if BATTLE_QUEUE:
+        # Match found! (Opponent is the first in line)
+        opponent_name = BATTLE_QUEUE.pop(0)
+        
+        # Select random Pokémon for both players
+        player_mon_docs = list(mongo.db.pokemon.find({"player": session['email'], "locked": False}))
+        opponent_mon_docs = list(mongo.db.pokemon.find({"player": opponent_name, "locked": False}))
+        
+        if not player_mon_docs or not opponent_mon_docs:
+             # Put opponent back in queue or handle error
+             BATTLE_QUEUE.insert(0, opponent_name)
+             return jsonify({"message": "Not enough available Pokemon to battle!"}), 400
+
+        player_mon = random.choice(player_mon_docs)
+        opponent_mon = random.choice(opponent_mon_docs)
+        
+        # Simulate Battle
+        is_player_winner = simulate_battle(player_mon, opponent_mon)
+        
+        # Update XP/Level for both players
+        player_xp_gain, player_level_up = update_user_xp(session['email'], is_player_winner)
+        opponent_xp_gain, opponent_level_up = update_user_xp(opponent_name, not is_player_winner)
+        
+        # Store results temporarily
+        battle_id = str(ObjectId())
+        BATTLES_IN_PROGRESS[battle_id] = {
+            "winner": session['email'] if is_player_winner else opponent_name,
+            "loser": opponent_name if is_player_winner else session['email'],
+            "player_mon": player_mon['name'],
+            "opponent_mon": opponent_mon['name'],
+            "player_xp_gain": player_xp_gain,
+            "player_level_up": player_level_up,
+            "result_message": "WIN!" if is_player_winner else "LOSS!"
+        }
+        
+        return jsonify({"message": "Match found! Battle ready.", "status": "matched", "battle_id": battle_id}), 200
+
+    # 3. No match, enter queue
+    BATTLE_QUEUE.append(session['email'])
+         
+    return jsonify({"message": "Entered queue.", "status": "queue", "position": BATTLE_QUEUE.index(session['email']) + 1}), 200
+
+@app.route('/api/battle/result/<battle_id>', methods=['GET'])
+def get_battle_result(battle_id):
+    """Retrieves the result of a completed battle."""
+    global BATTLES_IN_PROGRESS
+    
+    result = BATTLES_IN_PROGRESS.pop(battle_id, None)
+    
+    if result:
+        # Clear the in-memory battle status
+        return jsonify({
+            "status": "complete",
+            "message": f"Battle finished! {result['result_message']}",
+            "result": result
+        })
+    
+    return jsonify({"status": "error", "message": "Battle ID not found or result already claimed."}), 404
 
 if __name__ == '__main__':
     app.run(debug=True) # Setting debug=True enables auto-reloading during development

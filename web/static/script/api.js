@@ -44,5 +44,11 @@ export const API = {
         callApi('trade/create', 'POST', { offering_ids, looking_for_count }),
         
     fulfillTrade: (trade_id, fulfilling_ids) => 
-        callApi('trade/fulfill', 'PUT', { trade_id, fulfilling_ids })
+        callApi('trade/fulfill', 'PUT', { trade_id, fulfilling_ids }),
+
+    getUserInfo: () => callApi('user/info', "GET"), 
+    
+    // Battle queue functions
+    enterQueue: () => callApi('battle/queue', 'POST'), 
+    getBattleResult: (battleId) => callApi(`battle/result/${battleId}`, 'GET') 
 };

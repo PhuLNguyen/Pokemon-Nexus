@@ -1,8 +1,10 @@
 // The orchestrator script that ties together various modules for the game client
 
-import { renderBattle, renderGatchaResult } from './renderer.js';
+import { renderBattle, renderGatchaResult, renderUserDashboard, renderBattleQueue } from './renderer.js';
 import { loadInventoryView, handleRelease } from './inventory.js';
 import { loadTradeMenu, renderCreateTradeForm, renderFulfillTradeForm, handleCreateTrade, handleFulfillTrade, toggleTradeSelection } from './trade.js';
+import { enterMatchmakingQueue } from './battle.js'; // NEW
+import { loadDashboard } from './user.js'; // NEW
 import { API } from './api.js'; // Ensure api.js is imported for generic calls
 
 const actionContainer = document.getElementById('action-container');
@@ -18,7 +20,15 @@ window.renderFulfillTradeForm = renderFulfillTradeForm;
 window.handleCreateTrade = handleCreateTrade;
 window.handleFulfillTrade = handleFulfillTrade;
 window.toggleTradeSelection = toggleTradeSelection;
+window.loadDashboard = loadDashboard;
 
+// Store battle state globally
+window.battleState = {
+    inQueue: false,
+    battleId: null,
+    queueInterval: null,
+    currentLevel: 1 // Placeholder for display
+};
 
 /**
  * Main function to load content based on the button clicked.
@@ -26,13 +36,25 @@ window.toggleTradeSelection = toggleTradeSelection;
  * @param {string} endpoint - The data-endpoint attribute from the button.
  */
 window.loadContent = async function(endpoint) {
+    
     actionContainer.innerHTML = '<h2>Loading...</h2>';
     
     try {
         let content = '';
 
+        // Clear any existing queue intervals when changing screens
+        if(window.battleState.queueInterval) {
+            clearInterval(window.battleState.queueInterval);
+            window.battleState.queueInterval = null;
+        }
+
+        if (endpoint === 'battle') {
+            return enterMatchmakingQueue();
+        }
+        
+        // Check if the endpoint requires dashboard loading (e.g., initially or after non-battle actions)
         if (endpoint === 'inventory' || endpoint === 'release') {
-            // Inventory logic is handled by inventory.js
+            // Load inventory view which should include a user dashboard above it
             return loadInventoryView();
         }
         
@@ -53,12 +75,40 @@ window.loadContent = async function(endpoint) {
         }
 
         actionContainer.innerHTML = content;
-
+        
     } catch (error) {
         actionContainer.innerHTML = `<h2>Server Error 🚨</h2><p>Could not connect to the server or process the request.</p><p>Error: ${error.message}</p>`;
         console.error("Fetch error:", error);
     }
 }
+
+/**
+ * Retrieves and displays the final battle result.
+ */
+async function displayBattleResult(battleId) {
+    window.actionContainer.innerHTML = '<h2>Retrieving Battle Results...</h2>';
+    
+    try {
+        const result = await API.getBattleResult(battleId);
+        
+        // Reset battle state
+        window.battleState.inQueue = false;
+        window.battleState.battleId = null;
+
+        if (result.status === 'complete') {
+             window.actionContainer.innerHTML = renderBattleResult(result);
+             // Since we won/lost, reload the dashboard info to update level/XP immediately
+             // loadDashboard(); // Optionally reload dashboard after a short delay
+        } else {
+            throw new Error(result.message);
+        }
+        
+    } catch (error) {
+        window.actionContainer.innerHTML = `<h2>Result Error 🚨</h2><p>Failed to retrieve battle result: ${error.message}</p>`;
+        console.error("Result retrieval error:", error);
+    }
+}
+
 
 // --- Initialization ---
 
@@ -70,6 +120,9 @@ function init() {
             window.loadContent(endpoint); 
         });
     });
+
+    // Load the dashboard when the page first loads
+    loadDashboard();
 }
 
 document.addEventListener('DOMContentLoaded', init);

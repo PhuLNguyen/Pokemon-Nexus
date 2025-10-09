@@ -165,3 +165,75 @@ export function renderFulfillTradeFormHTML(tradeId, requestedCount, creator, inv
         </div>
     `;
 }
+
+export function renderUserDashboard(userInfo) {
+    const xpNeeded = userInfo.xp_to_next_level;
+    const currentLevel = userInfo.level;
+    const currentXp = userInfo.xp;
+
+    // Calculate XP percentage for a simple bar
+    const xpPercent = Math.min(100, (currentXp / (currentXp + xpNeeded)) * 100);
+
+    return `
+        <h2>${userInfo.email} Dashboard</h2>
+        <div style="background: #34495e; padding: 20px; border-radius: 8px;">
+            <p style="font-size: 1.5em; margin: 0;">Level: <strong>${currentLevel}</strong></p>
+            <p>Wins: ${userInfo.wins} | Losses: ${userInfo.losses}</p>
+            
+            <div style="margin-top: 15px;">
+                <p>XP Progress: ${currentXp} / ${currentXp + xpNeeded}</p>
+                <div style="background: #ecf0f1; border-radius: 10px; height: 15px; overflow: hidden;">
+                    <div style="width: ${xpPercent}%; height: 100%; background: #f1c40f; transition: width 0.5s;"></div>
+                </div>
+            </div>
+            <p style="font-size: 0.9em; margin-top: 10px;">XP to next level: ${xpNeeded}</p>
+        </div>
+    `;
+}
+
+export function renderBattleQueue(status, position) {
+    let message = '';
+    
+    if (status === 'queue') {
+        message = `<h2>Searching for Opponent... ⏱️</h2>
+                   <p>You are currently in the queue.</p>
+                   <p>Your current position: <strong>#${position}</strong></p>
+                   <p>Do not navigate away! We will notify you when a match is found.</p>`;
+    } else {
+        message = '<h2>Battle Ready!</h2><p>Checking for results...</p>';
+    }
+
+    return message;
+}
+
+export function renderBattleResult(data) {
+    const result = data.result;
+    const isWin = result.result_message === 'WIN!';
+    const color = isWin ? '#28a745' : '#dc3545';
+    
+    let levelUpMessage = '';
+    if (result.player_level_up > 0) {
+        levelUpMessage = `<h3 style="color: #f1c40f;">LEVEL UP! You reached Level ${window.currentLevel + result.player_level_up}! 🎉</h3>`;
+    }
+
+    return `
+        <div style="text-align: center; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: ${color}; border-bottom: 3px solid ${color}; padding-bottom: 15px;">
+                BATTLE COMPLETE: ${result.result_message}
+            </h1>
+            
+            ${levelUpMessage}
+
+            <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+                <p>Your Pokémon: <strong>${result.player_mon}</strong></p>
+                <p>Opponent's Pokémon: <strong>${result.opponent_mon}</strong></p>
+            </div>
+
+            <div style="background: #34495e; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                <p style="font-size: 1.2em;">XP Gained: <strong>+${result.player_xp_gain}</strong></p>
+            </div>
+            
+            <button onclick="window.loadContent('inventory')" class="menu-button" style="margin-top: 30px; background-color: #3498db;">Return to Inventory</button>
+        </div>
+    `;
+}
