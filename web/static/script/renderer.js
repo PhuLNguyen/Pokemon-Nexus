@@ -1,8 +1,5 @@
 // Function to generate common Pokémon card HTML
-function generatePokemonCardHtml(p, type) {
-    // Escape single quotes for use in onclick handler parameter string
-    const inventoryString = JSON.stringify(p).replace(/"/g, '&quot;');
-    
+function generatePokemonCardHtml(pokemon, type) {
     let selectionElement = '';
     let lockStatus = pokemon.locked ? ' (LOCKED)' : '';
 
