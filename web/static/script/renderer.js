@@ -42,7 +42,7 @@ function generatePokemonCardHtml(pokemon, type) {
 
 
 export function renderGatchaResult(data) {
-    const p = data.new_pokemon;
+    const pokemon = data.new_pokemon;
     return `
         <div class="pokemon-card">
             <h2>🎉 Gatcha Pull! You Got: ${pokemon.name}! 🎉</h2>
@@ -62,7 +62,7 @@ export function renderInventory(pokemonList, handleRelease) {
         return `<h2>Inventory Empty</h2><p>You haven't caught any Pokemon yet! Go use the Gatcha!</p>`;
     }
 
-    const inventoryHtml = pokemonList.map(p => generatePokemonCardHtml(p, 'inventory')).join('');
+    const inventoryHtml = pokemonList.map(pokemon => generatePokemonCardHtml(pokemon, 'inventory')).join('');
 
     return `
         <h2>Your Pokemon Inventory (${pokemonList.length} Caught)</h2>
@@ -92,7 +92,7 @@ export function renderTradeMenu(inventory, pendingTrades, currentPlayer) {
     const inventoryString = JSON.stringify(inventory).replace(/"/g, '&quot;');
     
     const tradeListHtml = pendingTrades.map(trade => {
-        const offeredNames = trade.offered_details.map(p => pokemon.name).join(', ');
+        const offeredNames = trade.offered_details.map(pokemon => pokemon.name).join(', ');
         return `
             <li class="trade-request-item" style="border: 1px solid #5bc0de; padding: 15px; margin-bottom: 10px; border-radius: 5px;">
                 <p><strong>Offer ID:</strong> ${trade.id} | From: ${trade.creator}</p>
@@ -123,7 +123,7 @@ export function renderTradeMenu(inventory, pendingTrades, currentPlayer) {
 
 export function renderCreateTradeFormHTML(inventory) {
     const maxSelection = 1;
-    const inventoryHtml = inventory.map(p => generatePokemonCardHtml(p, 'trade-create')).join('');
+    const inventoryHtml = inventory.map(pokemon => generatePokemonCardHtml(pokemon, 'trade-create')).join('');
 
     return `
         <h1>Create New Trade (Select 1-${maxSelection} to Offer)</h1>
@@ -144,12 +144,12 @@ export function renderCreateTradeFormHTML(inventory) {
 }
 
 export function renderFulfillTradeFormHTML(tradeId, requestedCount, creator, inventory) {
-    const availableInventory = inventory.filter(p => !pokemon.locked);
+    const availableInventory = inventory.filter(pokemon => !pokemon.locked);
     
     // We pass 1 to generatePokemonCardHtml for max selection status
-    const inventoryWithCount = availableInventory.map(p => ({...p, requiredCount: 1}));
+    const inventoryWithCount = availableInventory.map(pokemon => ({...pokemon, requiredCount: 1}));
 
-    const inventoryHtml = inventoryWithCount.map(p => generatePokemonCardHtml(p, 'trade-fulfill')).join('');
+    const inventoryHtml = inventoryWithCount.map(pokemon => generatePokemonCardHtml(pokemon, 'trade-fulfill')).join('');
 
     return `
         <h1>Fulfill Trade Request from ${creator}</h1>
