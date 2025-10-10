@@ -213,7 +213,8 @@ export function renderBattleResult(data) {
     
     let levelUpMessage = '';
     if (result.player_level_up > 0) {
-        levelUpMessage = `<h3 style="color: #f1c40f;">LEVEL UP! You reached Level ${window.currentLevel + result.player_level_up}! 🎉</h3>`;
+        // Use window.currentLevel which should have been updated after the battle XP calculation
+        levelUpMessage = `<h3 style="color: #f1c40f;">LEVEL UP! You reached Level ${window.currentLevel}! 🎉</h3>`;
     }
 
     return `
@@ -233,7 +234,7 @@ export function renderBattleResult(data) {
                 <p style="font-size: 1.2em;">XP Gained: <strong>+${result.player_xp_gain}</strong></p>
             </div>
             
-            <button onclick="window.loadContent('inventory')" class="menu-button" style="margin-top: 30px; background-color: #3498db;">Return to Inventory</button>
+            <button onclick="window.handleBattleEndConfirmation()" class="menu-button" style="margin-top: 30px; background-color: #3498db;">OK</button>
         </div>
     `;
 }

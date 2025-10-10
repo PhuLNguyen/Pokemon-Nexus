@@ -3,7 +3,7 @@
 import { renderBattle, renderGatchaResult, renderUserDashboard, renderBattleQueue } from './renderer.js';
 import { loadInventoryView, handleRelease } from './inventory.js';
 import { loadTradeMenu, renderCreateTradeForm, renderFulfillTradeForm, handleCreateTrade, handleFulfillTrade, toggleTradeSelection } from './trade.js';
-import { enterMatchmakingQueue } from './battle.js'; // NEW
+import { enterMatchmakingQueue, handleBattleEndConfirmation } from './battle.js'; // NEW
 import { loadDashboard } from './user.js'; // NEW
 import { API } from './api.js'; // Ensure api.js is imported for generic calls
 
@@ -21,6 +21,7 @@ window.handleCreateTrade = handleCreateTrade;
 window.handleFulfillTrade = handleFulfillTrade;
 window.toggleTradeSelection = toggleTradeSelection;
 window.loadDashboard = loadDashboard;
+window.handleBattleEndConfirmation = handleBattleEndConfirmation;
 
 // Store battle state globally
 window.battleState = {

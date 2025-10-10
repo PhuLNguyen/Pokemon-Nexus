@@ -77,6 +77,12 @@ async function checkMatchmakingStatus() {
     }
 }
 
+// Exported function to be called by the "OK" button in the rendered HTML
+export function handleBattleEndConfirmation() {
+    // This is where you put any final cleanup logic before returning to the dashboard
+    loadDashboard(); // Now loads the dashboard after the button is clicked
+}
+
 /**
  * Retrieves and displays the final battle result.
  */
@@ -92,8 +98,9 @@ async function displayBattleResult(battleId) {
 
         if (result.status === 'complete') {
              window.actionContainer.innerHTML = renderBattleResult(result);
-             // Re-load the dashboard info immediately after the battle result to show level/XP update
-             loadDashboard();
+             
+             // *** IMPORTANT CHANGE: DO NOT CALL loadDashboard() HERE ***
+             // The dashboard reload will now be triggered by the "OK" button click handler.
         } else {
             throw new Error(result.message);
         }
