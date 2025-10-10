@@ -6,7 +6,6 @@ from bson.objectid import ObjectId # Import for converting string IDs back to Ob
 from math import ceil 
 import os
 import random
-import logging # app.logger.info("Hello World!")
 from datetime import datetime
 
 # --- SETUP AND CONFIGURATION ---
@@ -316,7 +315,7 @@ def get_user_info():
 def handle_connect():
     """Logs the client connecting and associates the session ID (sid) with the current user."""
     # Note: In a real app, authentication would happen here, linking sid to the DB user.
-    print(f"Client Connected: SID={request.sid}, User={session['email']}")
+    app.logger.info(f"Client Connected: SID={request.sid}, User={session['email']}")
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -326,7 +325,7 @@ def handle_disconnect():
     if player_name:
         # Remove from queue if present
         BATTLE_QUEUE = [player for player in BATTLE_QUEUE if player['sid'] != request.sid]
-        print(f"Client Disconnected: {player_name} removed from queue.")
+        app.logger.info(f"Client Disconnected: {player_name} removed from queue.")
 
 @socketio.on('join_queue')
 def handle_join_queue():
@@ -392,7 +391,7 @@ def handle_join_queue():
 
             # 2. Emit the FULL result data directly to the client
             socketio.emit('battle_result', final_result_payload, room=player['sid'])
-            print(f"Match found! Sent FULL result to {player['name']} (SID: {player['sid']})")
+            app.logger.info(f"Match found! Sent FULL result to {player['name']} (SID: {player['sid']})")
         
     else:
         # No match found, notify client of position
