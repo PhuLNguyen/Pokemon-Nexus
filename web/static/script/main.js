@@ -3,7 +3,7 @@
 import { renderBattle, renderGatchaResult } from './renderer.js';
 import { loadInventoryView, handleRelease } from './inventory.js';
 import { loadTradeMenu, renderCreateTradeForm, renderFulfillTradeForm, handleCreateTrade, handleFulfillTrade, toggleTradeSelection } from './trade.js';
-import { enterMatchmakingQueue, handleBattleEndConfirmation } from './battle.js'; // NEW
+import { enterMatchmakingQueue, handleBattleEndConfirmation, setupSocketListeners } from './battle.js'; // NEW
 import { loadDashboard } from './user.js'; // NEW
 import { API } from './api.js'; // Ensure api.js is imported for generic calls
 
@@ -23,6 +23,9 @@ window.toggleTradeSelection = toggleTradeSelection;
 window.loadDashboard = loadDashboard;
 window.handleBattleEndConfirmation = handleBattleEndConfirmation;
 
+// Global Socket.IO instance and state
+// Will store the socket connection
+window.socket = null; 
 // Store battle state globally
 window.battleState = {
     inQueue: false,
@@ -85,6 +88,14 @@ window.loadContent = async function(endpoint) {
 
 // --- Initialization ---
 function init() {
+    // Initialize Socket.IO connection
+    // Ensure this matches your server URL
+    window.socket = io('http://localhost:5000');
+
+    // Pass the socket instance to the battle module for event binding
+    setupSocketListeners(window.socket);
+
+    // Set up button listeners and load dashboard
     const dynamicButtons = document.querySelectorAll('.menu-container button');
     dynamicButtons.forEach(button => {
         button.addEventListener('click', () => {

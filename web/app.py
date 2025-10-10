@@ -1,7 +1,7 @@
 from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session
 from flask_cors import CORS
 from flask_pymongo import PyMongo
-from werkzeug.security import generate_password_hash, check_password_hash # Recommended for real apps
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from bson.objectid import ObjectId # Import for converting string IDs back to ObjectId
 from math import ceil 
 import os
@@ -9,11 +9,14 @@ import random
 import logging # app.logger.info("Hello World!")
 from datetime import datetime
 
-# --- 1. SETUP AND CONFIGURATION ---
+# --- SETUP AND CONFIGURATION ---
 
 app = Flask(__name__)
 # Enable CORS for the client running on a different port/origin
-CORS(app) 
+# Ensure CORS is configured for SocketIO as well
+CORS(app, resources={r"/*": {"origins": "*"}}) 
+# Initialize SocketIO
+socketio = SocketIO(app, cors_allowed_origins="*") 
 
 app.config["MONGO_URI"] = os.getenv("MONGO_URI", "mongodb://localhost:27017/fallback_db")
 app.secret_key = os.getenv("SECRET_KEY", "a_development_fallback_key") 
@@ -22,12 +25,12 @@ app.secret_key = os.getenv("SECRET_KEY", "a_development_fallback_key")
 mongo = PyMongo(app)
 
 # --- Global Battle Queue Management (Simplified In-Memory) ---
-BATTLE_QUEUE = []
-BATTLES_IN_PROGRESS = {} # Stores ongoing battle IDs and results
+BATTLE_QUEUE = [] 
+BATTLES_IN_PROGRESS = {} 
 XP_PER_WIN = 100
 LEVEL_UP_XP = 500
 
-# --- 2. ROUTES FOR USER INTERACTION ---
+# --- ROUTES FOR USER INTERACTION ---
 
 @app.route('/', methods=['GET'])
 def index():
@@ -307,8 +310,96 @@ def get_user_info():
         "losses": user.get('losses', 0)
     })
 
-# --- Helper Functions ---
+# --- SOCKETIO EVENT HANDLERS ---
 
+@socketio.on('connect')
+def handle_connect():
+    """Logs the client connecting and associates the session ID (sid) with the current user."""
+    # Note: In a real app, authentication would happen here, linking sid to the DB user.
+    print(f"Client Connected: SID={request.sid}, User={session['email']}")
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Removes player from the queue if they disconnect."""
+    global BATTLE_QUEUE
+    player_name = session.get('email')
+    if player_name:
+        # Remove from queue if present
+        BATTLE_QUEUE = [player for player in BATTLE_QUEUE if player['sid'] != request.sid]
+        print(f"Client Disconnected: {player_name} removed from queue.")
+
+@socketio.on('join_queue')
+def handle_join_queue():
+    """Handles queue entry and immediate matchmaking attempt."""
+    global BATTLE_QUEUE, BATTLES_IN_PROGRESS
+    player_name = session.get('email')
+    player_sid = request.sid
+
+    # Check if already in queue
+    if any(player['sid'] == player_sid for player in BATTLE_QUEUE):
+        return
+    
+    # Enter queue
+    BATTLE_QUEUE.append({'name': player_name, 'sid': player_sid})
+
+    # Attempt Matchmaking (if at least 2 players are in the queue)
+    if len(BATTLE_QUEUE) >= 2:
+        
+        # Pop the two players off the queue
+        player1 = BATTLE_QUEUE.pop(0) 
+        player2 = BATTLE_QUEUE.pop(0)
+            
+        # --- Match Found & Simulation ---
+        
+        # Select Pokémon, Simulate Battle, Update XP/Level (using existing logic)
+        player1_mon_docs = list(mongo.db.pokemon.find({"player": player1['name'], "locked": False}))
+        player2_mon_docs = list(mongo.db.pokemon.find({"player": player2['name'], "locked": False}))
+        
+        if not player1_mon_docs or not player2_mon_docs:
+             # Send error event back to client
+             emit('queue_error', {'message': "Not enough available Pokemon to battle!"}, room=player1['sid'])
+             return
+
+        p1_mon = random.choice(player1_mon_docs)
+        p2_mon = random.choice(player2_mon_docs)
+        
+        is_p1_winner = simulate_battle(p1_mon, p2_mon)
+        
+        p1_xp, p1_level_up = update_user_xp(player1['name'], is_p1_winner)
+        p2_xp, p2_level_up = update_user_xp(player2['name'], not is_p1_winner)
+
+        result_data = {
+            "winner": player1['name'] if is_p1_winner else player2['name']
+        }
+        
+        # --- Create a result object tailored for each player ---
+        
+        for player in [player1, player2]:
+            is_winner = player['name'] == result_data["winner"]
+            
+            # 1. Create the final result payload
+            final_result_payload = {
+                "status": "complete",
+                "message": f"Battle finished! {'WIN!' if is_winner else 'LOSS!'}",
+                "result": {
+                    "player_mon": p1_mon['name'] if player['name'] == player1['name'] else p2_mon['name'],
+                    "opponent_mon": p2_mon['name'] if player['name'] == player1['name'] else p1_mon['name'],
+                    "player_xp_gain": p1_xp if player['name'] == player1['name'] else p2_xp,
+                    "player_level_up": p1_level_up if player['name'] == player1['name'] else p2_level_up,
+                    "result_message": "WIN!" if is_winner else "LOSS!"
+                }
+            }
+
+            # 2. Emit the FULL result data directly to the client
+            socketio.emit('battle_result', final_result_payload, room=player['sid'])
+            print(f"Match found! Sent FULL result to {player['name']} (SID: {player['sid']})")
+        
+    else:
+        # No match found, notify client of position
+        position = BATTLE_QUEUE.index({'name': player_name, 'sid': player_sid}) + 1
+        emit('queue_update', {'message': "Searching...", 'position': position}, room=player_sid)
+
+# --- Helper Functions ---
 def update_user_xp(user_name, is_winner):
     """Adds XP to the user and handles leveling up."""
     user = mongo.db.players.find_one({"email": user_name})
@@ -370,76 +461,5 @@ def simulate_battle(player_mon, opponent_mon):
 
     return p1['hp'] > 0 # Returns True if player's mon (p1) wins
 
-# --- API Route: Battle Queue ---
-
-@app.route('/api/battle/queue', methods=['POST'])
-def enter_queue():
-    """Handles queue entry, matchmaking, and battle simulation."""
-    global BATTLE_QUEUE, BATTLES_IN_PROGRESS
-    
-    # 1. Check if user is already in the queue or a battle
-    if session['email'] in BATTLE_QUEUE:
-        return jsonify({"message": "Already in queue.", "status": "queue", "position": BATTLE_QUEUE.index(session['email']) + 1}), 200
-
-    # 2. Check for an opponent in the queue
-    if BATTLE_QUEUE:
-        app.logger.info(f"Match found between {session['email']} and {BATTLE_QUEUE[0]}")
-        # Match found! (Opponent is the first in line)
-        opponent_name = BATTLE_QUEUE.pop(0)
-        
-        # Select random Pokémon for both players
-        player_mon_docs = list(mongo.db.pokemon.find({"player": session['email'], "locked": False}))
-        opponent_mon_docs = list(mongo.db.pokemon.find({"player": opponent_name, "locked": False}))
-        
-        if not player_mon_docs or not opponent_mon_docs:
-             # Put opponent back in queue or handle error
-             BATTLE_QUEUE.insert(0, opponent_name)
-             return jsonify({"message": "Not enough available Pokemon to battle!"}), 400
-
-        player_mon = random.choice(player_mon_docs)
-        opponent_mon = random.choice(opponent_mon_docs)
-        
-        # Simulate Battle
-        is_player_winner = simulate_battle(player_mon, opponent_mon)
-        
-        # Update XP/Level for both players
-        player_xp_gain, player_level_up = update_user_xp(session['email'], is_player_winner)
-        
-        # Store results temporarily
-        battle_id = str(ObjectId())
-        BATTLES_IN_PROGRESS[battle_id] = {
-            "winner": session['email'] if is_player_winner else opponent_name,
-            "loser": opponent_name if is_player_winner else session['email'],
-            "player_mon": player_mon['name'],
-            "opponent_mon": opponent_mon['name'],
-            "player_xp_gain": player_xp_gain,
-            "player_level_up": player_level_up,
-            "result_message": "WIN!" if is_player_winner else "LOSS!"
-        }
-        
-        return jsonify({"message": "Match found! Battle ready.", "status": "matched", "battle_id": battle_id}), 200
-
-    # 3. No match, enter queue
-    BATTLE_QUEUE.append(session['email'])
-         
-    return jsonify({"message": "Entered queue.", "status": "queue", "position": BATTLE_QUEUE.index(session['email']) + 1}), 200
-
-@app.route('/api/battle/result/<battle_id>', methods=['GET'])
-def get_battle_result(battle_id):
-    """Retrieves the result of a completed battle."""
-    global BATTLES_IN_PROGRESS
-    
-    result = BATTLES_IN_PROGRESS.pop(battle_id, None)
-    
-    if result:
-        # Clear the in-memory battle status
-        return jsonify({
-            "status": "complete",
-            "message": f"Battle finished! {result['result_message']}",
-            "result": result
-        })
-    
-    return jsonify({"status": "error", "message": "Battle ID not found or result already claimed."}), 404
-
 if __name__ == '__main__':
-    app.run(debug=True) # Setting debug=True enables auto-reloading during development
+    socketio.run(debug=True) # Setting debug=True enables auto-reloading during development

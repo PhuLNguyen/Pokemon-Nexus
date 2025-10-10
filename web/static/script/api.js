@@ -52,6 +52,5 @@ export const API = {
     
     // Battle related APIs
     getBattleData: () => callApi('battle', 'GET'),
-    enterQueue: () => callApi('battle/queue', 'POST'), 
-    getBattleResult: (battleId) => callApi(`battle/result/${battleId}`, 'GET') 
+    enterQueue: () => callApi('battle/queue', 'POST')
 };

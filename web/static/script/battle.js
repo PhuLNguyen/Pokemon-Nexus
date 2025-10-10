@@ -1,78 +1,51 @@
-import { API } from './api.js';
 import { renderBattleQueue, renderBattleResult } from './renderer.js';
 import { loadDashboard } from './user.js'; // Import the dashboard loader
 
 // Store battle state globally on the window object (initialized in main.js)
 
-/**
- * Enters the player into the matchmaking queue.
- */
-export async function enterMatchmakingQueue() {
-    // Clear existing intervals before starting a new action
-    if(window.battleState.queueInterval) {
-        clearInterval(window.battleState.queueInterval);
-        window.battleState.queueInterval = null;
-    }
+// --- Socket Listener Setup ---
+export function setupSocketListeners(socket) {
     
-    window.actionContainer.innerHTML = renderBattleQueue('loading');
-    
-    try {
-        const response = await API.enterQueue();
+    // Handle queue status update (sent by server if no match is found)
+    socket.on('queue_update', (data) => {
+        window.battleState.inQueue = true;
+        window.actionContainer.innerHTML = renderBattleQueue('queue', data.position);
+    });
 
-        if (response.status === 'queue') {
-            window.battleState.inQueue = true;
-            window.actionContainer.innerHTML = renderBattleQueue('queue', response.position);
-            
-            // Start polling for a match (check every 3 seconds)
-            window.battleState.queueInterval = setInterval(checkMatchmakingStatus, 3000);
-            
-        } else if (response.status === 'matched') {
-            // Match found immediately!
-            window.battleState.battleId = response.battle_id;
-            // No need to clear interval here since it wasn't set yet.
-            await displayBattleResult(response.battle_id);
-        } else {
-             // Error (e.g., no available Pokemon)
-             alert(response.message);
-             loadDashboard();
-        }
+    // Listen for the direct 'battle_result' event from the server
+    socket.on('battle_result', (data) => {
+        window.battleState.inQueue = false;
+        
+        // Pass the already-fetched data directly to the renderer
+        showBattleResult(data);
+    });
 
-    } catch (error) {
-        window.actionContainer.innerHTML = `<h2>Queue Error 🚨</h2><p>Could not enter queue: ${error.message}</p>`;
-        console.error("Queue entry error:", error);
+    // Handle server-side errors
+    socket.on('queue_error', (data) => {
+        alert(`Queue Error: ${data.message}`);
+        window.battleState.inQueue = false;
         loadDashboard();
-    }
+    });
 }
 
 /**
- * Checks the queue status for a match.
+ * Enters the player into the matchmaking queue by emitting an event.
  */
-async function checkMatchmakingStatus() {
+export async function enterMatchmakingQueue() {
     
-    // If a battle ID is set, check the result
-    if (window.battleState.battleId) {
-        clearInterval(window.battleState.queueInterval);
-        return displayBattleResult(window.battleState.battleId);
+    if (window.battleState.inQueue) {
+         window.actionContainer.innerHTML = renderBattleQueue('queue', '...'); // Show current queue screen
+         return;
     }
-    
-    // Call enterQueue again. The server handles returning the position or a match.
-    try {
-        const response = await API.enterQueue();
-        
-        if (response.status === 'matched') {
-            window.battleState.battleId = response.battle_id;
-            clearInterval(window.battleState.queueInterval);
-            return displayBattleResult(response.battle_id);
-            
-        } else if (response.status === 'queue') {
-            // Update position display
-            window.actionContainer.innerHTML = renderBattleQueue('queue', response.position);
-        }
 
-    } catch (error) {
-        // Stop polling on error
-        clearInterval(window.battleState.queueInterval);
-        alert("Queue polling failed. Returning to dashboard.");
+    window.actionContainer.innerHTML = renderBattleQueue('loading');
+    
+    // Emit the event to the server instead of making an HTTP request
+    if (window.socket && window.socket.connected) {
+        window.socket.emit('join_queue');
+        window.battleState.inQueue = true; // Assume success until the server says otherwise
+    } else {
+        alert("Socket connection failed. Cannot join queue.");
         loadDashboard();
     }
 }
@@ -84,30 +57,21 @@ export function handleBattleEndConfirmation() {
 }
 
 /**
- * Retrieves and displays the final battle result.
+ * Displays the final battle result (data is now received directly via SocketIO).
  */
-async function displayBattleResult(battleId) {
-    window.actionContainer.innerHTML = '<h2>Retrieving Battle Results...</h2>';
+function showBattleResult(result) {
+    window.actionContainer.innerHTML = '<h2>Battle Ready! Checking for results...</h2>';
     
-    try {
-        const result = await API.getBattleResult(battleId);
-        
-        // Reset battle state
-        window.battleState.inQueue = false;
-        window.battleState.battleId = null;
+    // Reset battle state
+    window.battleState.inQueue = false;
+    window.battleState.battleId = null; // No longer used, but kept for cleanup
 
-        if (result.status === 'complete') {
-             window.actionContainer.innerHTML = renderBattleResult(result);
-             
-             // *** IMPORTANT CHANGE: DO NOT CALL loadDashboard() HERE ***
-             // The dashboard reload will now be triggered by the "OK" button click handler.
-        } else {
-            throw new Error(result.message);
-        }
-        
-    } catch (error) {
-        window.actionContainer.innerHTML = `<h2>Result Error 🚨</h2><p>Failed to retrieve battle result: ${error.message}</p>`;
-        console.error("Result retrieval error:", error);
+    if (result.status === 'complete') {
+         window.actionContainer.innerHTML = renderBattleResult(result);
+         // The user now clicks 'OK' before the dashboard loads
+    } else {
+        window.actionContainer.innerHTML = `<h2>Result Error 🚨</h2><p>Unexpected result status: ${result.message}</p>`;
+        console.error("Result retrieval error:", result.message);
         loadDashboard();
     }
 }
