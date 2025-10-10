@@ -105,12 +105,6 @@ export function toggleTradeSelection(element, type) {
     
     const selected = document.querySelectorAll(`.${type}-trade-checkbox:checked`);
     let isCurrentlySelected = checkbox.checked;
-    
-    // If attempting to select when one is already selected (and the max is 1)
-    if (!isCurrentlySelected && selected.length >= max) {
-        alert(`You can only select ONE Pokémon for a 1-for-1 trade.`);
-        return; 
-    }
 
     checkbox.checked = !isCurrentlySelected;
     overlay.style.display = checkbox.checked ? 'flex' : 'none';
