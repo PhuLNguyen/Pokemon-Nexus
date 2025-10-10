@@ -101,7 +101,7 @@ def login():
             # Set a session variable to keep the user logged in
             session['email'] = email   
             # session.pop('email', None) # To log out, remove the session variable
-            return redirect(url_for('home', email=email))
+            return redirect(url_for('home'))
         else:
             flash('Invalid email or password.', 'error')
     else:
@@ -113,7 +113,7 @@ def login():
 @app.route('/home')
 def home():
     # A page the user sees after a successful login
-    return render_template('home.html', request.args.get('email'))
+    return render_template('home.html')
 
 @app.route('/api/inventory', methods=['GET'])
 def get_inventory():
