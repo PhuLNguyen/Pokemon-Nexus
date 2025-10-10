@@ -15,4 +15,5 @@ docker compose down --volumes
 - test for scalability
 - create lab report
 - create powerpoint slide
+- make this repo public
 - submit on Canvas
