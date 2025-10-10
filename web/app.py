@@ -1,12 +1,13 @@
+# Import for converting string IDs back to ObjectId
+from bson.objectid import ObjectId 
 from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session
 from flask_cors import CORS
 from flask_pymongo import PyMongo
 from flask_socketio import SocketIO, emit
-from bson.objectid import ObjectId # Import for converting string IDs back to ObjectId
 from math import ceil 
+from datetime import datetime
 import os
 import random
-from datetime import datetime
 
 # --- SETUP AND CONFIGURATION ---
 
@@ -35,7 +36,6 @@ LEVEL_UP_XP = 100
 def index():
     """Renders the main page with login/register forms."""
     return render_template('login.html')
-
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -79,7 +79,6 @@ def register():
         flash(f'An error occurred during registration: {e}', 'error')
 
     return redirect(url_for('index'))
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -209,7 +208,6 @@ def get_trade_menu_data():
         "current_player": session['email']
     })
 
-
 @app.route('/api/trade/create', methods=['POST'])
 def create_trade():
     """Locks the selected single Pokemon and creates a new trade request, requesting one in return."""
@@ -245,7 +243,6 @@ def create_trade():
         "message": "1-for-1 Trade request created! Your Pokémon is locked.",
         "locked_count": 1
     })
-
 
 @app.route('/api/trade/fulfill', methods=['PUT'])
 def fulfill_trade():
