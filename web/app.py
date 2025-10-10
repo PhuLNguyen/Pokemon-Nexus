@@ -385,6 +385,7 @@ def enter_queue():
 
     # 2. Check for an opponent in the queue
     if BATTLE_QUEUE:
+        app.logger.info(f"Match found between {session['email']} and {BATTLE_QUEUE[0]}")
         # Match found! (Opponent is the first in line)
         opponent_name = BATTLE_QUEUE.pop(0)
         
@@ -405,7 +406,6 @@ def enter_queue():
         
         # Update XP/Level for both players
         player_xp_gain, player_level_up = update_user_xp(session['email'], is_player_winner)
-        opponent_xp_gain, opponent_level_up = update_user_xp(opponent_name, not is_player_winner)
         
         # Store results temporarily
         battle_id = str(ObjectId())
