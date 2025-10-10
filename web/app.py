@@ -79,7 +79,7 @@ def register():
     return redirect(url_for('index'))
 
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     """Handles the form submission from the Login form and retrieves data from MongoDB."""
     
@@ -109,6 +109,12 @@ def login():
         flash('Invalid email or password.', 'error')
 
     return redirect(url_for('index'))
+
+@app.route('/logout', methods=['GET'])
+def logout():
+    """Logs out the current user by clearing the session."""
+    session.pop('email', None)
+    return redirect(url_for('login'))
 
 @app.route('/home')
 def home():
