@@ -8,7 +8,6 @@ function generatePokemonCardHtml(pokemon, type) {
         selectionElement = `<input type="checkbox" name="pokemon_id" value="${pokemon._id.$oid}" class="release-checkbox" style="position: absolute; top: 10px; left: 10px; width: 20px; height: 20px;" ${pokemon.locked ? 'disabled' : ''}>`;
     } else if (type === 'trade-create' || type === 'trade-fulfill') {
         // ToggleTradeSelection is a global function defined in main.js/window object
-        const max = type === 'trade-create' ? 5 : pokemon.requiredCount; 
         const className = type === 'trade-create' ? 'create-trade-checkbox' : 'fulfill-trade-checkbox';
 
         selectionElement = `

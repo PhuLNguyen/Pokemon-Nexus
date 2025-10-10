@@ -99,10 +99,7 @@ export async function handleFulfillTrade(tradeId, requiredCount) {
 /**
  * Logic for selecting/unselecting Pokémon in the trade forms.
  */
-export function toggleTradeSelection(element, type, max) {
-    // Max selection is now fixed at 1 for all trade actions
-    max = 1; 
-    
+export function toggleTradeSelection(element, type) {
     const checkbox = element.querySelector('.trade-checkbox');
     const overlay = element.querySelector('.selection-overlay');
     
