@@ -11,7 +11,7 @@ function generatePokemonCardHtml(pokemon, type) {
         const className = type === 'trade-create' ? 'create-trade-checkbox' : 'fulfill-trade-checkbox';
 
         selectionElement = `
-            <div class="pokemon-card" style="display:inline-block; margin: 5px; position: relative; cursor: pointer;" data-id="${pokemon._id.$oid}" onclick="window.toggleTradeSelection(this, '${type === 'trade-create' ? 'create' : 'fulfill'}', ${max})">
+            <div class="pokemon-card" style="display:inline-block; margin: 5px; position: relative; cursor: pointer;" data-id="${pokemon._id.$oid}" onclick="window.toggleTradeSelection(this, '${type === 'trade-create' ? 'create' : 'fulfill'}')">
                 <input type="checkbox" class="trade-checkbox ${className}" value="${pokemon._id.$oid}" style="display: none;">
                 <div class="selection-overlay">SELECTED</div>
                 <h3>${pokemon.name}</h3>
