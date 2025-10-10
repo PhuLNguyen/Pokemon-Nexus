@@ -1,7 +1,7 @@
 from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session
 from flask_cors import CORS
 from flask_pymongo import PyMongo
-from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_socketio import SocketIO, emit
 from bson.objectid import ObjectId # Import for converting string IDs back to ObjectId
 from math import ceil 
 import os
