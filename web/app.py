@@ -351,8 +351,6 @@ def simulate_battle(player_mon, opponent_mon):
     
     p1_atk = p1['doc']['atk']
     p2_atk = p2['doc']['atk']
-    p1_def = p1['doc']['def']
-    p2_def = p2['doc']['def']
 
     # Determine who attacks first (higher ATK stat)
     attacker = p1 if p1_atk >= p2_atk else p2
