@@ -214,7 +214,7 @@ export function renderBattleResult(data) {
     let levelUpMessage = '';
     if (result.player_level_up > 0) {
         // Use window.currentLevel which should have been updated after the battle XP calculation
-        levelUpMessage = `<h3 style="color: #f1c40f;">LEVEL UP! You reached Level ${window.currentLevel}! 🎉</h3>`;
+        levelUpMessage = `<h3 style="color: #f1c40f;">LEVEL UP! You reached Level ${window.currentLevel + result.player_level_up}! 🎉</h3>`;
     }
 
     return `
