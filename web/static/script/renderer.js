@@ -122,17 +122,11 @@ export function renderTradeMenu(inventory, pendingTrades, currentPlayer) {
 }
 
 export function renderCreateTradeFormHTML(inventory) {
-    const maxSelection = 1;
     const inventoryHtml = inventory.map(pokemon => generatePokemonCardHtml(pokemon, 'trade-create')).join('');
 
     return `
-        <h1>Create New Trade (Select 1-${maxSelection} to Offer)</h1>
+        <h1>Create New Trade (Select 1 to Offer)</h1>
         <div id="selection-status">Selected: 0</div>
-        
-        <div style="margin: 20px 0;">
-            <label for="request-count" style="font-weight: bold;">Number of Pokémon you want in return:</label>
-            <input type="number" id="request-count" value="1" min="1" max="${maxSelection}" style="width: 50px; padding: 5px; margin-left: 10px; color: #333;">
-        </div>
         
         <div style="display:flex; flex-wrap:wrap; justify-content:center;">${inventoryHtml}</div>
         

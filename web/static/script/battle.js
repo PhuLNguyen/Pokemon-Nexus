@@ -1,5 +1,5 @@
 import { renderBattleQueue, renderBattleResult } from './renderer.js';
-import { loadDashboard } from './user.js'; // Import the dashboard loader
+import { loadDashboard } from './user.js'; 
 
 // Store battle state globally on the window object (initialized in main.js)
 
@@ -34,8 +34,9 @@ export function setupSocketListeners(socket) {
 export async function enterMatchmakingQueue() {
     
     if (window.battleState.inQueue) {
-         window.actionContainer.innerHTML = renderBattleQueue('queue', '...'); // Show current queue screen
-         return;
+        // Show current queue screen
+        window.actionContainer.innerHTML = renderBattleQueue('queue', '...'); 
+        return;
     }
 
     window.actionContainer.innerHTML = renderBattleQueue('loading');
@@ -43,7 +44,8 @@ export async function enterMatchmakingQueue() {
     // Emit the event to the server instead of making an HTTP request
     if (window.socket && window.socket.connected) {
         window.socket.emit('join_queue');
-        window.battleState.inQueue = true; // Assume success until the server says otherwise
+        // Assume success until the server says otherwise
+        window.battleState.inQueue = true; 
     } else {
         alert("Socket connection failed. Cannot join queue.");
         loadDashboard();
@@ -53,7 +55,7 @@ export async function enterMatchmakingQueue() {
 // Exported function to be called by the "OK" button in the rendered HTML
 export function handleBattleEndConfirmation() {
     // This is where you put any final cleanup logic before returning to the dashboard
-    loadDashboard(); // Now loads the dashboard after the button is clicked
+    loadDashboard();
 }
 
 /**
@@ -64,11 +66,10 @@ function showBattleResult(result) {
     
     // Reset battle state
     window.battleState.inQueue = false;
-    window.battleState.battleId = null; // No longer used, but kept for cleanup
 
     if (result.status === 'complete') {
-         window.actionContainer.innerHTML = renderBattleResult(result);
-         // The user now clicks 'OK' before the dashboard loads
+        // The user has to click 'OK' before the dashboard loads
+        window.actionContainer.innerHTML = renderBattleResult(result);
     } else {
         window.actionContainer.innerHTML = `<h2>Result Error 🚨</h2><p>Unexpected result status: ${result.message}</p>`;
         console.error("Result retrieval error:", result.message);
