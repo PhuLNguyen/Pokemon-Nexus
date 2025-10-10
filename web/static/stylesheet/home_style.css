@@ -90,3 +90,16 @@ body {
 	padding: 3px 0;
 	border-bottom: 1px dashed #ccc;
 }
+
+.selection-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;                /* used when shown via inline style 'flex' */
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.45);
+  color: #fff;
+  font-weight: bold;
+  pointer-events: none;
+  display: none;                /* hide by default */
+}
