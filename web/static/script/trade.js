@@ -102,8 +102,6 @@ export async function handleFulfillTrade(tradeId, requiredCount) {
 export function toggleTradeSelection(element, type) {
     const checkbox = element.querySelector('.trade-checkbox');
     const overlay = element.querySelector('.selection-overlay');
-    
-    const selected = document.querySelectorAll(`.${type}-trade-checkbox:checked`);
     let isCurrentlySelected = checkbox.checked;
 
     checkbox.checked = !isCurrentlySelected;
