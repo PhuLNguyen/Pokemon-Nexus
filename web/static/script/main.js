@@ -1,6 +1,6 @@
 // The orchestrator script that ties together various modules for the game client
 
-import { renderBattle, renderGatchaResult, renderUserDashboard, renderBattleQueue } from './renderer.js';
+import { renderBattle, renderGatchaResult } from './renderer.js';
 import { loadInventoryView, handleRelease } from './inventory.js';
 import { loadTradeMenu, renderCreateTradeForm, renderFulfillTradeForm, handleCreateTrade, handleFulfillTrade, toggleTradeSelection } from './trade.js';
 import { enterMatchmakingQueue, handleBattleEndConfirmation } from './battle.js'; // NEW
@@ -83,36 +83,7 @@ window.loadContent = async function(endpoint) {
     }
 }
 
-/**
- * Retrieves and displays the final battle result.
- */
-async function displayBattleResult(battleId) {
-    window.actionContainer.innerHTML = '<h2>Retrieving Battle Results...</h2>';
-    
-    try {
-        const result = await API.getBattleResult(battleId);
-        
-        // Reset battle state
-        window.battleState.inQueue = false;
-        window.battleState.battleId = null;
-
-        if (result.status === 'complete') {
-             window.actionContainer.innerHTML = renderBattleResult(result);
-             // Since we won/lost, reload the dashboard info to update level/XP immediately
-             // loadDashboard(); // Optionally reload dashboard after a short delay
-        } else {
-            throw new Error(result.message);
-        }
-        
-    } catch (error) {
-        window.actionContainer.innerHTML = `<h2>Result Error 🚨</h2><p>Failed to retrieve battle result: ${error.message}</p>`;
-        console.error("Result retrieval error:", error);
-    }
-}
-
-
 // --- Initialization ---
-
 function init() {
     const dynamicButtons = document.querySelectorAll('.menu-container button');
     dynamicButtons.forEach(button => {
