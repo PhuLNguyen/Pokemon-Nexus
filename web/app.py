@@ -155,7 +155,7 @@ def home():
 @app.route('/api/inventory', methods=['GET'])
 def get_inventory():
     """Returns a list of all Pokemon in the player inventory."""
-    inventory = list(mongo.db.pokemon.find({'player': session['email']}))
+    inventory = list(mongo.db.pokemon.find({'player': session.get('email')}))
     return jsonify(inventory)
 
 @app.route('/api/release', methods=['DELETE'])
@@ -188,9 +188,9 @@ def run_gatcha():
     # Add the player's email to associate the Pokemon with the user
 
     gatcha_pool = [
-        {"player":session["email"], "name": "Squirtle", "atk": 48, "def": 65, "hp": 44, "locked":False, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png"},
-        {"player":session["email"], "name": "Jigglypuff", "atk": 45, "def": 20, "hp": 115, "locked":False, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/39.png"},
-        {"player":session["email"], "name": "Snorlax", "atk": 110, "def": 65, "hp": 160, "locked":False, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/143.png"}
+        {"player":session.get('email'), "name": "Squirtle", "atk": 48, "def": 65, "hp": 44, "locked":False, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png"},
+        {"player":session.get('email'), "name": "Jigglypuff", "atk": 45, "def": 20, "hp": 115, "locked":False, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/39.png"},
+        {"player":session.get('email'), "name": "Snorlax", "atk": 110, "def": 65, "hp": 160, "locked":False, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/143.png"}
     ]
     
     new_pokemon = random.choice(gatcha_pool)
@@ -214,7 +214,7 @@ def get_battle_queue():
 def get_trade_menu_data():
     """Returns the current player's inventory and all pending trades."""
     # 1. Get current player's available (unlocked) inventory
-    available_inventory = mongo.db.pokemon.find({"player": session['email'], "locked": False})
+    available_inventory = mongo.db.pokemon.find({"player": session.get('email'), "locked": False})
     available_inventory = list(available_inventory)
     
     # 2. Get all pending trades
@@ -235,7 +235,7 @@ def get_trade_menu_data():
     return jsonify({
         "inventory": available_inventory,
         "pending_trades": pending_trades,
-        "current_player": session['email']
+        "current_player": session.get('email')
     })
 
 @app.route('/api/trade/create', methods=['POST'])
@@ -252,7 +252,7 @@ def create_trade():
     
     # 2. Lock the Pokemon for trade
     lock_result = mongo.db.pokemon.update_one(
-        {'_id': object_id, 'player': session['email'], 'locked': False},
+        {'_id': object_id, 'player': session.get('email'), 'locked': False},
         {'$set': {'locked': True}}
     )
 
@@ -261,7 +261,7 @@ def create_trade():
 
     # 3. Create the trade request document (always looking for 1)
     trade_request = {
-        "creator": session['email'],
+        "creator": session.get('email'),
         "offering_ids": offering_ids, 
         "looking_for_count": 1, # Fixed at 1
         "status": "pending",
@@ -299,14 +299,14 @@ def fulfill_trade():
     
     # A. Original Creator (e.g., TrainerB) receives CURRENT_PLAYER's (TrainerA's) Pokemon
     mongo.db.pokemon.update_one(
-        {'_id': fulfilling_obj_id, 'player': session['email']},
+        {'_id': fulfilling_obj_id, 'player': session.get('email')},
         {'$set': {'player': trade['creator'], 'locked': False}}
     )
     
     # B. CURRENT_PLAYER (TrainerA) receives the Original Creator's (TrainerB's) Pokemon (and unlocks it)
     mongo.db.pokemon.update_one(
         {'_id': original_offered_id},
-        {'$set': {'player': session['email'], 'locked': False}}
+        {'$set': {'player': session.get('email'), 'locked': False}}
     )
 
     # 3. Delete the fulfilled trade request
@@ -323,7 +323,7 @@ def fulfill_trade():
 @app.route('/api/user/info', methods=['GET'])
 def get_user_info():
     """Returns the current player's level and XP."""
-    user = mongo.db.players.find_one({"email": session['email']})
+    user = mongo.db.players.find_one({'email': session.get('email')})
     if not user:
         return jsonify({"message": "User not found."}), 404
     
@@ -341,13 +341,12 @@ def get_user_info():
 @socketio.on('connect')
 def handle_connect():
     """Logs the client connecting and associates the session ID (sid) with the current user."""
-    # Note: In a real app, authentication would happen here, linking sid to the DB user.
-    app.logger.info(f"Client Connected: SID={request.sid}, User={session['email']}")
-    if 'email' in session: 
-        app.logger.info(f"User {session['email']} connected with SID={request.sid}")
+    user_email = session.get('email')
+    app.logger.info(f"Client Connected: SID={request.sid}, User={user_email}")
+    if user_email:
+        app.logger.info(f"User {user_email} connected with SID={request.sid}")
     else:
-        # This is where the KeyError will happen if you use session['email']
-        app.logger.info(f"Unauthenticated connection with SID={request.sid}")
+        app.logger.warning(f"Unauthenticated connection with SID={request.sid}")
 
 @socketio.on('disconnect')
 def handle_disconnect():
