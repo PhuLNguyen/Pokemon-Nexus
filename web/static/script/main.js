@@ -89,8 +89,14 @@ window.loadContent = async function(endpoint) {
 // --- Initialization ---
 function init() {
     // Initialize Socket.IO connection
-    // Ensure this matches your server URL
-    window.socket = io('http://localhost:5000');
+    // This tells the Socket.IO client where the proxy is located.
+    const socket = io('http://phu-app-core:5000', {
+        path: '/socket.io/',
+        // Force WebSocket transport to avoid proxying issues with polling.
+        transports: ['websocket'] 
+    });
+
+    window.socket = socket; 
 
     // Pass the socket instance to the battle module for event binding
     setupSocketListeners(window.socket);

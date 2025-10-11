@@ -1,7 +1,8 @@
-Flask					# The web framework
-Flask-PyMongo			# For MongoDB integration
-Flask-Cors		 		# For handling Cross-Origin Resource Sharing (CORS)
-Flask-SocketIO		 	# For real-time communication
-gunicorn                 # For the app-core service
-gevent                   # Asynchronous worker for Flask-SocketIO
-gevent-websocket         # Required for WebSockets in Gunicorn/Gevent
+Flask
+Flask-PyMongo
+Flask-Cors
+Flask-SocketIO
+gunicorn                 # Needed for both app-core and app-realtime
+eventlet                 # The official, most stable worker for Flask-SocketIO
+redis                    # Python client for Flask-Session
+Flask-Session

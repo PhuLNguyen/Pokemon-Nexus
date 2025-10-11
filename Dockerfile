@@ -13,7 +13,3 @@ COPY ./web .
 
 # Expose the ports used by the internal services (5000 for core, 5001 for real-time)
 EXPOSE 5000 5001
-
-# The CMD is no longer needed as the entry point is defined by the 'command' 
-# in docker-compose.yaml for each service (Gunicorn/Python).
-# CMD ["flask", "run", "--host=0.0.0.0"]

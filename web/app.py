@@ -4,10 +4,12 @@ from flask import Flask, request, render_template, redirect, url_for, flash, jso
 from flask_cors import CORS
 from flask_pymongo import PyMongo
 from flask_socketio import SocketIO, emit
+from flask_session import Session 
 from math import ceil 
 from datetime import datetime
-import os
 import random
+import os
+import redis 
 
 # --- SETUP AND CONFIGURATION ---
 
@@ -15,11 +17,34 @@ app = Flask(__name__)
 # Enable CORS for the client running on a different port/origin
 # Ensure CORS is configured for SocketIO as well
 CORS(app, resources={r"/*": {"origins": "*"}}) 
-# Initialize SocketIO
-socketio = SocketIO(app, cors_allowed_origins="*") 
 
-app.config["MONGO_URI"] = os.getenv("MONGO_URI", "mongodb://localhost:27017/fallback_db")
-app.secret_key = os.getenv("SECRET_KEY", "a_development_fallback_key") 
+# --- Configuration ---
+# Load configuration from environment variables defined in docker-compose.yaml
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default_secret') 
+app.config['SESSION_TYPE'] = os.environ.get('SESSION_TYPE', 'filesystem') # Using os.environ.get for reliability
+SESSION_REDIS_URL = os.environ.get('SESSION_REDIS') # Temporarily store the URL string
+
+app.config["MONGO_URI"] = os.environ.get("MONGO_URI", "mongodb://localhost:27017/fallback_db")
+
+# --- Convert URL string to Redis object ---
+if app.config['SESSION_TYPE'] == 'redis' and SESSION_REDIS_URL:
+    # Use the redis.from_url() method to create a client instance from the connection string
+    try:
+        app.config['SESSION_REDIS'] = redis.from_url(SESSION_REDIS_URL)
+        app.logger.info("Redis client initialized successfully from URL.")
+    except Exception as e:
+        app.logger.info(f"ERROR: Could not initialize Redis client from URL: {e}")
+        # If it fails, Flask-Session will fall back, but we want the error to be visible.
+
+# --- Initialize Flask-Session ---
+# This step must happen before you use the session object.
+server_session = Session(app)
+
+# Initialize SocketIO (SocketIO will now use the external Redis session)
+# NOTE: Set manage_session=False if you want Flask-SocketIO to use the Flask-Session established above.
+# If you omit manage_session, it defaults to Flask's session and should also work.
+# However, for clarity in external session use, we explicitly manage it with Flask-Session.
+socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False) 
 
 # Initialize Flask-PyMongo
 mongo = PyMongo(app)
@@ -313,6 +338,11 @@ def handle_connect():
     """Logs the client connecting and associates the session ID (sid) with the current user."""
     # Note: In a real app, authentication would happen here, linking sid to the DB user.
     app.logger.info(f"Client Connected: SID={request.sid}, User={session['email']}")
+    if 'email' in session: 
+        app.logger.info(f"User {session['email']} connected with SID={request.sid}")
+    else:
+        # This is where the KeyError will happen if you use session['email']
+        app.logger.info(f"Unauthenticated connection with SID={request.sid}")
 
 @socketio.on('disconnect')
 def handle_disconnect():
