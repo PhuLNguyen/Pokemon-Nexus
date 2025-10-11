@@ -48,14 +48,17 @@ services:
       - redis
     volumes:
       - ./web:/app 
-    # Eventlet worker (official recommendation)
-    command: gunicorn -k eventlet -w 1 --bind 0.0.0.0:5001 app:app 
+    # Eventlet worker with explicit timeout settings
+    command: gunicorn -k eventlet -w 1 --bind 0.0.0.0:5001 --timeout 300 --keep-alive 65 --log-level debug app:app
 
   # 4. Task Queue Broker (Redis)
   redis:
     image: redis:latest
     container_name: phu-redis
     restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --bind 0.0.0.0
     volumes:
       - phu-redis-volume:/data
 

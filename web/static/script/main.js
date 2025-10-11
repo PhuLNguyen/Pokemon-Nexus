@@ -88,12 +88,16 @@ window.loadContent = async function(endpoint) {
 
 // --- Initialization ---
 function init() {
-    // Initialize Socket.IO connection
-    // This tells the Socket.IO client where the proxy is located.
-    const socket = io('http://phu-app-core:5000', {
-        path: '/socket.io/',
-        // Force WebSocket transport to avoid proxying issues with polling.
-        transports: ['websocket'] 
+    // Initialize Socket.IO connection with automatic reconnection
+    const socket = io('http://localhost:5000', {
+        path: '/socket.io',  // Remove trailing slash
+        transports: ['websocket', 'polling'],  // Allow fallback to polling
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 5,
+        forceNew: true,
+        timeout: 10000
     });
 
     window.socket = socket; 

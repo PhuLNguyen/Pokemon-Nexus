@@ -40,11 +40,16 @@ if app.config['SESSION_TYPE'] == 'redis' and SESSION_REDIS_URL:
 # This step must happen before you use the session object.
 server_session = Session(app)
 
-# Initialize SocketIO (SocketIO will now use the external Redis session)
-# NOTE: Set manage_session=False if you want Flask-SocketIO to use the Flask-Session established above.
-# If you omit manage_session, it defaults to Flask's session and should also work.
-# However, for clarity in external session use, we explicitly manage it with Flask-Session.
-socketio = SocketIO(app, cors_allowed_origins="*", manage_session=False) 
+# Initialize SocketIO with message queue for multiple workers
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*",
+    manage_session=False,
+    message_queue='redis://redis:6379/0',
+    async_mode='eventlet',
+    logger=True,            # Enable python-socketio logging
+    engineio_logger=True    # Enable engineio (handshake/transport) logging
+)
 
 # Initialize Flask-PyMongo
 mongo = PyMongo(app)
