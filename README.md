@@ -9,7 +9,6 @@
 - BUG in trade feature:
 	a. allow creator to trade their own pokemon
 	b. not have a cancel button
-- create additional nodes to satisfy layered architecture of 5 containers 
 - create microservice architecture with at least 5 nodes (containers)
 - test for performance
 - test for scalability
