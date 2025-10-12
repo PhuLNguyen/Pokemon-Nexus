@@ -133,7 +133,7 @@ def logout():
 @app.route('/home')
 def home():
     # A page the user sees after a successful login
-    return render_template('home_noSocket.html')
+    return render_template('home.html')
 
 # --- API Route: Get User Info ---
 
