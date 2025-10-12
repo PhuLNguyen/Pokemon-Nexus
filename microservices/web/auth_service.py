@@ -74,7 +74,7 @@ def register():
 def logout():
     """Handles user logout and session cleanup."""
     session.pop('user_email', None)
-    return jsonify({'message': 'Logout successful'}), 200
+    return redirect(url_for('login'))
 
 # --- Dashboard / Profile Route ---
 
