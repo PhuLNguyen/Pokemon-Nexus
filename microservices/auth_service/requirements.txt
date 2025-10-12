@@ -1,0 +1,5 @@
+flask
+pymongo
+redis
+flask-session
+flask-socketio

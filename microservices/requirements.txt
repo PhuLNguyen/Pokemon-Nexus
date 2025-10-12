@@ -1,8 +1,0 @@
-Flask==2.3.4
-Flask-SocketIO==5.4.3
-python-engineio==4.6.4
-python-socketio==5.10.3
-eventlet==0.33.3
-pymongo==4.4.0
-Flask-Session==0.4.0
-
