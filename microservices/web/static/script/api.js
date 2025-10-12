@@ -1,7 +1,7 @@
 // Use a relative base so the client will work when served through a reverse proxy (nginx)
 // or when backend is available on the same origin. Absolute localhost:5000 breaks when
 // the front-end is served through a proxy or different host in production.
-const BASE_URL = '/api/';
+const BASE_URL = 'http://localhost:8080/api/';
 
 /**
  * Handles all generic GET/POST API calls.
