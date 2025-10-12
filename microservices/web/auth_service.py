@@ -6,6 +6,9 @@ from flask_cors import CORS
 from flask_session import Session # Import Session
 from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session
 from datetime import datetime
+import os
+import redis
+from flask import request
 
 # --- SETUP AND CONFIGURATION ---
 
@@ -140,7 +143,17 @@ def home():
 @app.route('/api/user/info', methods=['GET'])
 def get_user_info():
     """Returns the current player's level and XP."""
-    user = mongo.db.players.find_one({'email': session.get('email')})
+    # DEBUG: log session contents to help trace authentication issues
+    try:
+        app.logger.info(f"DEBUG session dict: {dict(session)}")
+        print(f"DEBUG session dict: {dict(session)}")
+    except Exception:
+        app.logger.info("DEBUG: could not convert session to dict")
+
+    user_email = session.get('user_email')
+    app.logger.info(f"DEBUG: session user_email -> {user_email}")
+
+    user = mongo.db.players.find_one({'email': user_email})
     if not user:
         return jsonify({"message": "User not found."}), 404
     
@@ -155,6 +168,35 @@ def get_user_info():
         "wins": user.get('wins', 0),
         "losses": user.get('losses', 0)
     })
+
+
+# Temporary debug route to inspect session contents (remove in production)
+@app.route('/debug/session', methods=['GET'])
+def debug_session():
+    try:
+        data = dict(session)
+    except Exception:
+        data = {'error': 'could not serialize session'}
+    return jsonify({'session': data}), 200
+
+
+@app.route('/debug/session-raw', methods=['GET'])
+def debug_session_raw():
+    """Return the session cookie value and the raw Redis value for that key."""
+    sess_cookie = request.cookies.get('session')
+    redis_info = None
+    try:
+        if sess_cookie:
+            r = redis.from_url(os.environ.get('SESSION_REDIS'))
+            key = f'session:{sess_cookie}'
+            raw = r.get(key)
+            redis_info = repr(raw)
+        else:
+            redis_info = 'no session cookie provided'
+    except Exception as e:
+        redis_info = f'error reading redis: {e}'
+
+    return jsonify({'cookie': sess_cookie, 'redis_raw': redis_info}), 200
 
 # Run the app directly for development/testing within the container
 if __name__ == '__main__':
