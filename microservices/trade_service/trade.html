@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Center</title>
+    <link rel="stylesheet" href="/static/stylesheet/home_style.css">
+</head>
+<body>
+    <div id="action-container">
+        <div class="trade-view">
+            <h2>Trading Center</h2>
+            <button onclick="renderCreateTradeForm()">Create New Trade</button>
+            <div class="active-trades">
+                <h3>Active Trades</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="menu-container">
+        <button class="menu-button" onclick="window.location.href='/gatcha'">Gatcha</button>
+        <button class="menu-button" onclick="window.location.href='/inventory'">Inventory</button>
+        <button class="menu-button" onclick="window.location.href='/battle'">Battle</button>
+        <button class="menu-button active" onclick="window.location.href='/trade'">Trade</button>
+        <a class="menu-button" href="/auth/logout">Logout</a>
+    </div>
+
+    <script type="module" src="/static/script/main.js"></script>
+</body>
+</html>
