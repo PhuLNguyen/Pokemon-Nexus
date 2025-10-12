@@ -1,13 +1,47 @@
+import os
+import redis
+from flask import Flask
+from flask_pymongo import PyMongo
+from flask_cors import CORS
+from flask_session import Session # Import Session
+from flask import Flask, request, render_template, redirect, url_for, flash, jsonify, session
 from datetime import datetime
-from flask import request, render_template, jsonify, session, redirect, url_for
-from werkzeug.security import generate_password_hash, check_password_hash
-from web.db_utils import create_app, get_current_user_email
 
-# Initialize the Flask App and MongoDB connection for this service
-app, mongo = create_app(__name__)
-# The Auth Service will run on port 5000 (default for Gunicorn in the new docker-compose)
+# --- SETUP AND CONFIGURATION ---
 
-# --- Routes from original app.py (Authentication and Dashboard) ---
+app = Flask(__name__)
+
+# --- Configuration ---
+# Load configuration from environment variables defined in docker-compose.yaml
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default_secret') 
+app.config['SESSION_TYPE'] = os.environ.get('SESSION_TYPE', 'redis')
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax' # Required for modern browsers
+app.config['SESSION_COOKIE_SECURE'] = False # Use True in HTTPS production
+app.config["MONGO_URI"] = os.environ.get("MONGO_URI", "mongodb://localhost:27017/fallback_db")
+
+# Redis Configuration
+SESSION_REDIS_URL = os.environ.get('SESSION_REDIS')
+if app.config['SESSION_TYPE'] == 'redis' and SESSION_REDIS_URL:
+    try:
+        # Initialize the Redis client instance from the connection string
+        app.config['SESSION_REDIS'] = redis.from_url(SESSION_REDIS_URL)
+        print("Redis client initialized for sessions.")
+    except Exception as e:
+        print(f"Error initializing Redis client: {e}")
+        app.config['SESSION_TYPE'] = 'filesystem' # Fallback
+
+ # --- Initialize Extensions ---
+# IMPORTANT: Enable CORS for all microservices, allowing credentials (cookies)
+CORS(app, supports_credentials=True)
+
+# Initialize Flask-PyMongo
+mongo = PyMongo(app)
+
+# Initialize Flask-Session
+Session(app) 
+
+# --- Global ---
+LEVEL_UP_XP = 100
 
 @app.route('/')
 def index():
@@ -16,94 +50,112 @@ def index():
     # but for simplicity, we keep it in the Auth service to provide the entry point.
     return render_template('login.html')
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    """Handles user login and session creation."""
-    if request.method == 'POST':
-        # Data can come as JSON (API client) or form data (Web form)
-        data = request.get_json() if request.is_json else request.form
-        email = data.get('email')
-        password = data.get('password')
-        
-        if not email or not password:
-            return jsonify({'message': 'Missing email or password'}), 400
-
-        user = mongo.db.players.find_one({"email": email})
-        
-        if user and check_password_hash(user['password'], password):
-            session['user_email'] = email
-            session.permanent = True # Ensure session is persistent
-            return render_template('home.html')
-        else:
-            return redirect(url_for('index'))
-    
-    # GET request is typically handled by the frontend, so we return a simple error if API is hit
-    return jsonify({'message': 'Method Not Allowed for GET'}), 405
-
 @app.route('/register', methods=['POST'])
 def register():
-    """Handles user registration."""
-    data = request.get_json() if request.is_json else request.form
-    email = data.get('email')
-    password = data.get('password')
+    """Handles the form submission from the Registration form and stores data in MongoDB."""
     
-    if not email or not password:
-        return jsonify({'message': 'Missing email or password'}), 400
-    
-    if mongo.db.players.find_one({"email": email}):
-        return jsonify({'message': 'User already exists'}), 409
+    email = request.form.get('email')
+    password = request.form.get('password')
+    confirm_password = request.form.get('confirm_password')
 
-    hashed_password = generate_password_hash(password)
-    
-    # 1. Create Player Profile
-    new_player = {
-        "email": email,
-        "password": hashed_password,
-        "wins": 0,
-        "losses": 0,
-        "level": 1,
-        "xp": 0,
-        "created_at": datetime.now()
-    }
-    mongo.db.players.insert_one(new_player)
-    
+    if password != confirm_password:
+        flash('Passwords do not match.', 'error')
+        return redirect(url_for('index'))
+
+    # Check if user already exists (Read operation)
+    existing_user = mongo.db.players.find_one({'email': email})
+    if existing_user:
+        flash('Email already registered. Please log in.', 'error')
+        return redirect(url_for('index'))
+
+    # Store user data (Create operation)
+    try:
+        # In a real app, use generate_password_hash for security:
+        # hashed_password = generate_password_hash(password, method='sha256')
+        
+        user_data = {
+            "email": email,
+            "password": password, # ⚠️ DANGER: Replace with hashed password in production
+            "level": 1,
+            "xp": 0,
+            "wins": 0,
+            "losses": 0,
+            "created_at": datetime.now()
+        }
+        
+        # Insert the new document into the 'players' collection
+        mongo.db.players.insert_one(user_data)
+        
+        flash(f'Account created for {email}! Please log in.', 'success')
+        
+    except Exception as e:
+        flash(f'An error occurred during registration: {e}', 'error')
+
     return redirect(url_for('index'))
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Handles the form submission from the Login form and retrieves data from MongoDB."""
+    
+    email = request.form.get('email')
+    password = request.form.get('password')
 
-@app.route('/logout')
+    if not email or not password:
+        flash('Both email and password are required for login.', 'error')
+        return redirect(url_for('index'))
+
+    # Retrieve user data (Read operation)
+    user = mongo.db.players.find_one({'email': email})
+
+    if user:
+        # Check if the retrieved password matches the submitted password
+        # In a real app, use: if check_password_hash(user['password'], password):
+        if user['password'] == password: # ⚠️ DANGER: Replace with bcrypt check in production
+            flash(f'Successfully logged in as {email}!', 'success')
+            # Set a session variable to keep the user logged in
+            session['email'] = email   
+            # session.pop('email', None) # To log out, remove the session variable
+            return redirect(url_for('home'))
+        else:
+            flash('Invalid email or password.', 'error')
+    else:
+        # If no user is found with that email
+        flash('Invalid email or password.', 'error')
+
+    return redirect(url_for('index'))
+
+@app.route('/logout', methods=['GET'])
 def logout():
-    """Handles user logout and session cleanup."""
-    session.pop('user_email', None)
+    """Logs out the current user by clearing the session."""
+    session.pop('email', None)
     return redirect(url_for('login'))
 
-# --- Dashboard / Profile Route ---
+@app.route('/home')
+def home():
+    # A page the user sees after a successful login
+    return render_template('home_noSocket.html')
 
-@app.route('/api/dashboard', methods=['GET'])
-def dashboard_stats():
-    """Returns player stats for the dashboard view."""
-    user_email = get_current_user_email()
-    if not user_email:
-        return jsonify({'message': 'Unauthorized'}), 401
+# --- API Route: Get User Info ---
 
-    player = mongo.db.players.find_one({"email": user_email}, {"password": 0}) # Exclude password
+@app.route('/api/user/info', methods=['GET'])
+def get_user_info():
+    """Returns the current player's level and XP."""
+    user = mongo.db.players.find_one({'email': session.get('email')})
+    if not user:
+        return jsonify({"message": "User not found."}), 404
     
-    if player:
-        # Convert ObjectId to string for JSON serialization
-        player['_id'] = str(player['_id']) 
-        
-        stats = {
-            'email': player['email'],
-            'wins': player.get('wins', 0),
-            'losses': player.get('losses', 0),
-            'level': player.get('level', 1),
-            'xp': player.get('xp', 0),
-            'created_at': player['created_at'].strftime("%Y-%m-%d %H:%M:%S")
-        }
-        return jsonify(stats), 200
-    
-    return jsonify({'message': 'Player not found'}), 404
+    app.logger.info(f"LOGGER User {user.get('email')} requested their info.")
+    print(f"PRINT User {user.get('email')} requested their info.")
+
+    return jsonify({
+        "email": user.get('email', "email-placeholder"),
+        "level": user.get('level', 1),
+        "xp": user.get('xp', 0),
+        "xp_to_next_level": LEVEL_UP_XP - user.get('xp', 0),
+        "wins": user.get('wins', 0),
+        "losses": user.get('losses', 0)
+    })
 
 # Run the app directly for development/testing within the container
 if __name__ == '__main__':
-    from datetime import datetime
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
