@@ -41,7 +41,14 @@ function generatePokemonCardHtml(pokemon, type) {
 
 
 export function renderGatchaResult(data) {
-    const pokemon = data.new_pokemon;
+    const pokemon = data && data.new_pokemon;
+    if (!pokemon || !pokemon.name) {
+        return `<div class="pokemon-card error">
+            <h2>Gatcha Error</h2>
+            <p>Sorry, something went wrong with your gatcha pull.</p>
+            <p>${data && data.message ? data.message : 'No Pokémon data returned.'}</p>
+        </div>`;
+    }
     return `
         <div class="pokemon-card">
             <h2>🎉 Gatcha Pull! You Got: ${pokemon.name}! 🎉</h2>

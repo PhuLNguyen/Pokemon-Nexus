@@ -36,28 +36,26 @@ def run_gatcha():
 
 @app.route('/api/gatcha/', methods=['POST'])
 def run_gatcha_post():
-    """Simulates a monster draw and adds it to the user's inventory.
-
-    Note: This endpoint accepts POST requests and uses the trailing-slash
-    path to match the Nginx proxy configuration which proxies `/api/gatcha/`.
-    """
     user_email = get_current_user_email()
-    if not user_email:
-        return jsonify({'message': 'Unauthorized'}), 401
+    """Pulls a random Pokemon and adds it to the inventory."""
+    
+    # Define a pool of possible gatcha pulls
+    # Add the player's email to associate the Pokemon with the user
 
-    # Logic: Draw a new monster at level 1
-    new_monster_name = get_random_monster_name()
-    new_monster = generate_monster_stats(new_monster_name, level=1)
-    new_monster['owner_email'] = user_email
+    gatcha_pool = [
+        {"player":user_email, "name": "Squirtle", "atk": 48, "def": 65, "hp": 44, "locked":False, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png"},
+        {"player":user_email, "name": "Jigglypuff", "atk": 45, "def": 20, "hp": 115, "locked":False, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/39.png"},
+        {"player":user_email, "name": "Snorlax", "atk": 110, "def": 65, "hp": 160, "locked":False, "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/143.png"}
+    ]
+    
+    new_pokemon = random.choice(gatcha_pool)
 
-    # Save to inventory collection and attach the inserted id to the response
-    result = mongo.db.inventory.insert_one(new_monster)
-    new_monster['_id'] = str(result.inserted_id)
+    # Save the new Pokemon to the database
+    mongo.db.pokemon.insert_one(new_pokemon)
 
-    return jsonify({
-        'message': f"Congratulations! You drew a {new_monster['name']}!",
-        'monster': new_monster
-    }), 200
+    # Return the newly caught Pokemon data
+    return jsonify({"message": "Gatcha successful!", "new_pokemon": new_pokemon}), 200
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
