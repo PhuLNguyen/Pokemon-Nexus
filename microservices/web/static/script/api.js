@@ -16,7 +16,8 @@ async function callApi(endpoint, method, bodyData = null) {
         method: method,
         headers: {
             'Content-Type': 'application/json'
-        }
+        },
+        credentials: 'include' // Always send cookies/session for auth
     };
 
     if (bodyData) {
