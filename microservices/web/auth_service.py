@@ -113,7 +113,7 @@ def login():
         if user['password'] == password: # ⚠️ DANGER: Replace with bcrypt check in production
             flash(f'Successfully logged in as {email}!', 'success')
             # Set a session variable to keep the user logged in
-            session['email'] = email   
+            session['user_email'] = email   
             # session.pop('email', None) # To log out, remove the session variable
             return redirect(url_for('home'))
         else:
@@ -127,7 +127,7 @@ def login():
 @app.route('/logout', methods=['GET'])
 def logout():
     """Logs out the current user by clearing the session."""
-    session.pop('email', None)
+    session.pop('user_email', None)
     return redirect(url_for('login'))
 
 @app.route('/home')
