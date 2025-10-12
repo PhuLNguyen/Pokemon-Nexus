@@ -3,8 +3,20 @@ from flask_cors import CORS
 from pymongo import MongoClient
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 CORS(app)
+
+# Route to serve inventory.html
+from flask import send_from_directory
+
+@app.route('/inventory_page')
+def serve_inventory():
+    return send_from_directory('.', 'inventory.html')
+
+# Route to serve static files (if not handled by Flask's static_folder)
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory('static', path)
 
 
 # Helper: get MongoDB collection
@@ -38,4 +50,4 @@ def release():
 
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)

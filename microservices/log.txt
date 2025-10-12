@@ -1,0 +1,99 @@
+2025-10-12 01:21:29.460 | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+2025-10-12 01:21:29.460 | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+2025-10-12 01:21:29.492 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+2025-10-12 01:21:29.555 | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+2025-10-12 01:21:29.873 | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+2025-10-12 01:21:29.875 | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+2025-10-12 01:21:29.879 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+2025-10-12 01:21:29.914 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+2025-10-12 01:21:29.972 | /docker-entrypoint.sh: Configuration complete; ready for start up
+2025-10-12 01:21:30.106 | 2025/10/12 06:21:30 [emerg] 1#1: host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:21:30.106 | nginx: [emerg] host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:21:31.798 | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+2025-10-12 01:21:31.798 | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+2025-10-12 01:21:31.798 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+2025-10-12 01:21:31.807 | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+2025-10-12 01:21:31.848 | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+2025-10-12 01:21:31.848 | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+2025-10-12 01:21:31.849 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+2025-10-12 01:21:31.857 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+2025-10-12 01:21:31.862 | /docker-entrypoint.sh: Configuration complete; ready for start up
+2025-10-12 01:21:31.936 | 2025/10/12 06:21:31 [emerg] 1#1: host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:21:31.936 | nginx: [emerg] host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:21:32.706 | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+2025-10-12 01:21:32.706 | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+2025-10-12 01:21:32.707 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+2025-10-12 01:21:32.715 | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+2025-10-12 01:21:32.760 | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+2025-10-12 01:21:32.765 | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+2025-10-12 01:21:32.765 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+2025-10-12 01:21:32.781 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+2025-10-12 01:21:32.794 | /docker-entrypoint.sh: Configuration complete; ready for start up
+2025-10-12 01:21:32.825 | 2025/10/12 06:21:32 [emerg] 1#1: host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:21:32.825 | nginx: [emerg] host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:21:33.820 | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+2025-10-12 01:21:33.820 | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+2025-10-12 01:21:33.827 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+2025-10-12 01:21:33.844 | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+2025-10-12 01:21:33.928 | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+2025-10-12 01:21:33.929 | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+2025-10-12 01:21:33.929 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+2025-10-12 01:21:33.937 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+2025-10-12 01:21:33.941 | /docker-entrypoint.sh: Configuration complete; ready for start up
+2025-10-12 01:21:33.969 | 2025/10/12 06:21:33 [emerg] 1#1: host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:21:33.969 | nginx: [emerg] host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:21:35.613 | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+2025-10-12 01:21:35.613 | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+2025-10-12 01:21:35.616 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+2025-10-12 01:21:35.664 | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+2025-10-12 01:21:35.717 | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+2025-10-12 01:21:35.717 | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+2025-10-12 01:21:35.717 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+2025-10-12 01:21:35.723 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+2025-10-12 01:21:35.733 | /docker-entrypoint.sh: Configuration complete; ready for start up
+2025-10-12 01:21:35.801 | 2025/10/12 06:21:35 [emerg] 1#1: host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:21:35.802 | nginx: [emerg] host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:21:38.212 | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+2025-10-12 01:21:38.212 | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+2025-10-12 01:21:38.214 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+2025-10-12 01:21:38.335 | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+2025-10-12 01:21:38.388 | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+2025-10-12 01:21:38.391 | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+2025-10-12 01:21:38.391 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+2025-10-12 01:21:38.398 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+2025-10-12 01:21:38.412 | /docker-entrypoint.sh: Configuration complete; ready for start up
+2025-10-12 01:21:38.447 | 2025/10/12 06:21:38 [emerg] 1#1: host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:21:38.447 | nginx: [emerg] host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:21:42.185 | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+2025-10-12 01:21:42.188 | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+2025-10-12 01:21:42.197 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+2025-10-12 01:21:42.233 | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+2025-10-12 01:21:42.298 | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+2025-10-12 01:21:42.300 | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+2025-10-12 01:21:42.300 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+2025-10-12 01:21:42.320 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+2025-10-12 01:21:42.328 | /docker-entrypoint.sh: Configuration complete; ready for start up
+2025-10-12 01:21:42.371 | 2025/10/12 06:21:42 [emerg] 1#1: host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:21:42.372 | nginx: [emerg] host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:21:49.263 | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+2025-10-12 01:21:49.263 | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+2025-10-12 01:21:49.266 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+2025-10-12 01:21:49.319 | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+2025-10-12 01:21:49.340 | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+2025-10-12 01:21:49.342 | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+2025-10-12 01:21:49.342 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+2025-10-12 01:21:49.348 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+2025-10-12 01:21:49.352 | /docker-entrypoint.sh: Configuration complete; ready for start up
+2025-10-12 01:21:49.374 | 2025/10/12 06:21:49 [emerg] 1#1: host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:21:49.374 | nginx: [emerg] host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:22:02.638 | /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+2025-10-12 01:22:02.638 | /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+2025-10-12 01:22:02.642 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+2025-10-12 01:22:02.678 | 10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+2025-10-12 01:22:02.704 | 10-listen-on-ipv6-by-default.sh: info: /etc/nginx/conf.d/default.conf differs from the packaged version
+2025-10-12 01:22:02.706 | /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+2025-10-12 01:22:02.706 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+2025-10-12 01:22:02.712 | /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+2025-10-12 01:22:02.716 | /docker-entrypoint.sh: Configuration complete; ready for start up
+2025-10-12 01:22:02.740 | 2025/10/12 06:22:02 [emerg] 1#1: host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4
+2025-10-12 01:22:02.740 | nginx: [emerg] host not found in upstream "app-core:5000" in /etc/nginx/conf.d/default.conf:4

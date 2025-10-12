@@ -1,29 +1,65 @@
 
-from flask import Flask, session, request
-from flask_socketio import SocketIO, emit
-from flask_cors import CORS
-from flask_session import Session
-from pymongo import MongoClient
-import os
 import os
 import random
 from math import ceil
 
-app = Flask(__name__)
+# Prefer to enable eventlet/gevent if installed — SocketIO's engineio requires
+# a matching async_mode to be available or it raises ValueError. Try to
+# detect and configure a valid async_mode at startup. If eventlet is found
+# we monkey-patch before importing Flask to ensure cooperative IO works.
+async_mode = None
+try:
+    import eventlet
+    # monkey patch early to be safe (should happen before other blocking libs)
+    eventlet.monkey_patch()
+    async_mode = 'eventlet'
+except Exception:
+    try:
+        import gevent  # type: ignore
+        async_mode = 'gevent'
+    except Exception:
+        async_mode = 'threading'
+
+from flask import Flask, session, request
+from flask_socketio import SocketIO, emit
+from flask_cors import CORS
+from flask_session import Session
+import redis as _redis
+from pymongo import MongoClient
+
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 CORS(app)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev_secret')
+
+# Route to serve battle.html
+from flask import send_from_directory
+
+@app.route('/battle')
+def serve_battle():
+    return send_from_directory('.', 'battle.html')
+
+# Route to serve static files (if not handled by Flask's static_folder)
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory('static', path)
 
 # Configure Flask-Session to use Redis when available
 app.config['SESSION_TYPE'] = os.environ.get('SESSION_TYPE', 'redis')
 app.config['SESSION_REDIS'] = None
 if os.environ.get('SESSION_REDIS'):
-    app.config['SESSION_REDIS'] = os.environ.get('SESSION_REDIS')
+    # If SESSION_REDIS is provided as a URL (e.g. redis://redis:6379/1), create
+    # a Redis client instance so Flask-Session has a valid connection object.
+    try:
+        app.config['SESSION_REDIS'] = _redis.from_url(os.environ.get('SESSION_REDIS'))
+    except Exception:
+        # Fallback: leave the raw value (older Flask-Session versions may accept it)
+        app.config['SESSION_REDIS'] = os.environ.get('SESSION_REDIS')
 
 Session(app)
 
 # SocketIO message queue (use REDIS if provided)
 message_queue = os.environ.get('SOCKETIO_MESSAGE_QUEUE') or os.environ.get('SESSION_REDIS')
-socketio = SocketIO(app, cors_allowed_origins='*', async_mode='eventlet', message_queue=message_queue)
+socketio = SocketIO(app, cors_allowed_origins='*', async_mode=async_mode, message_queue=message_queue)
 
 BATTLE_QUEUE = []
 

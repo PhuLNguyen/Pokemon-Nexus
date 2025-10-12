@@ -5,8 +5,20 @@ import os
 import uuid
 from datetime import datetime
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 CORS(app)
+
+# Route to serve trade.html
+from flask import send_from_directory
+
+@app.route('/trade_page')
+def serve_trade():
+    return send_from_directory('.', 'trade.html')
+
+# Route to serve static files (if not handled by Flask's static_folder)
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory('static', path)
 
 
 # Helper: get MongoDB collection
@@ -83,4 +95,4 @@ def fulfill_trade():
 
 
 if __name__ == '__main__':
-    app.run(port=5003, debug=True)
+    app.run(host='0.0.0.0', port=5003, debug=True)

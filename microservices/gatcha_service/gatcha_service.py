@@ -8,6 +8,18 @@ import uuid
 app = Flask(__name__)
 CORS(app)
 
+# Route to serve gatcha.html
+from flask import send_from_directory
+
+@app.route('/gatcha_page')
+def serve_gatcha():
+    return send_from_directory('.', 'gatcha.html')
+
+# Route to serve static files (if not handled by Flask's static_folder)
+@app.route('/static/<path:path>')
+def serve_static(path):
+    return send_from_directory('static', path)
+
 
 # Helper: get MongoDB collection
 def get_collection(name):
@@ -53,4 +65,4 @@ def gatcha():
 
 
 if __name__ == '__main__':
-    app.run(port=5002, debug=True)
+    app.run(host='0.0.0.0', port=5002, debug=True)
