@@ -1,9 +1,0 @@
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
-COPY trade_service.py trade.html trade.js ./
-COPY static/stylesheet/ /app/static/stylesheet/
-COPY static/script/ /app/static/script/
-ENV PYTHONUNBUFFERED=1
-CMD ["python", "trade_service.py"]

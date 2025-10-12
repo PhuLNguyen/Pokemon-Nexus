@@ -1,137 +1,140 @@
+# Define network for inter-container communication
+networks:
+  pn-network:
+    driver: bridge
+
+# Define volumes for persistent data storage
+volumes:
+  pn-mongo-volume:
+  pn-redis-volume:
+
 services:
+  # 1. API Gateway / Reverse Proxy (Entry Point)
   nginx:
     image: nginx:stable-alpine
-    container_name: micro-nginx
+    container_name: pn-nginx
     restart: always
     ports:
-      - "8080:80"
+      # Expose Nginx on port 8080 to the host (to avoid port 5000 conflict)
+      - "8080:80" 
     volumes:
+      # Mount the custom Nginx configuration file
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
-      - auth
-      - battle
+      - app-auth
+      - app-inventory
+      - app-gatcha
+      - app-trade
+      - app-battle
+    networks:
+      - pn-network
+      
+  # --- 2. Microservices (All use the same base image built from Dockerfile) ---
 
-  auth:
-    build:
-      context: ./auth_service
-      dockerfile: Dockerfile.auth
-    container_name: micro-auth
-    working_dir: /app/auth_service
-    volumes:
-      - ./auth_service:/app/auth_service
+  # Authentication Service (Handles /login, /register, /dashboard)
+  app-auth:
+    build: . 
+    container_name: pn-app-auth
     environment:
       - MONGO_URI=mongodb://admin:password@mongodb:27017/PokemonNexusDB?authSource=admin
       - SECRET_KEY=your_strong_and_secret_key_for_flashing
       - SESSION_TYPE=redis
-      - SESSION_REDIS=redis://redis:6379/1
-      - SOCKETIO_MESSAGE_QUEUE=redis://redis:6379/0
+      - SESSION_REDIS=redis://redis:6379/1 
     depends_on:
       - mongodb
       - redis
-    ports:
-      - "5000:5000"
-    command: python auth_service.py
+    networks:
+      - pn-network
+    # Use Gunicorn to run the auth service file
+    command: gunicorn -w 4 --bind 0.0.0.0:5000 web.auth_service:app
 
-  inventory:
-    build:
-      context: ./inventory_service
-      dockerfile: Dockerfile.inventory
-    container_name: micro-inventory
-    working_dir: /app/inventory_service
-    volumes:
-      - ./inventory_service:/app/inventory_service
-    environment:
-      - MONGO_URI=mongodb://admin:password@mongodb:27017/PokemonNexusDB?authSource=admin
-      - SESSION_TYPE=redis
-      - SESSION_REDIS=redis://redis:6379/1
-    depends_on:
-      - mongodb
-      - redis
-    ports:
-      - "5001:5001"
-    command: python inventory_service.py
-
-  gatcha:
-    build:
-      context: ./gatcha_service
-      dockerfile: Dockerfile.gatcha
-    container_name: micro-gatcha
-    working_dir: /app/gatcha_service
-    volumes:
-      - ./gatcha_service:/app/gatcha_service
-    environment:
-      - MONGO_URI=mongodb://admin:password@mongodb:27017/PokemonNexusDB?authSource=admin
-      - SESSION_TYPE=redis
-      - SESSION_REDIS=redis://redis:6379/1
-    depends_on:
-      - mongodb
-      - redis
-    ports:
-      - "5002:5002"
-    command: python gatcha_service.py
-
-  trade:
-    build:
-      context: ./trade_service
-      dockerfile: Dockerfile.trade
-    container_name: micro-trade
-    working_dir: /app/trade_service
-    volumes:
-      - ./trade_service:/app/trade_service
-    environment:
-      - MONGO_URI=mongodb://admin:password@mongodb:27017/PokemonNexusDB?authSource=admin
-      - SESSION_TYPE=redis
-      - SESSION_REDIS=redis://redis:6379/1
-    depends_on:
-      - mongodb
-      - redis
-    ports:
-      - "5003:5003"
-    command: python trade_service.py
-
-  battle:
-    build:
-      context: ./battle_service
-      dockerfile: Dockerfile.battle
-    container_name: micro-battle
-    working_dir: /app/battle_service
-    volumes:
-      - ./battle_service:/app/battle_service
+  # Inventory Service (Handles /api/inventory/view, /api/inventory/release)
+  app-inventory:
+    build: . 
+    container_name: pn-app-inventory
     environment:
       - MONGO_URI=mongodb://admin:password@mongodb:27017/PokemonNexusDB?authSource=admin
       - SECRET_KEY=your_strong_and_secret_key_for_flashing
       - SESSION_TYPE=redis
-      - SESSION_REDIS=redis://redis:6379/1
-      - SOCKETIO_MESSAGE_QUEUE=redis://redis:6379/0
+      - SESSION_REDIS=redis://redis:6379/1 
     depends_on:
       - mongodb
       - redis
-    ports:
-      - "5004:5004"
-    command: python battle_service.py
+    networks:
+      - pn-network
+    # Use Gunicorn to run the inventory service file
+    command: gunicorn -w 4 --bind 0.0.0.0:5000 web.inventory_service:app
+  
+  # Gatcha Service (Handles /api/gatcha/run)
+  app-gatcha:
+    build: . 
+    container_name: pn-app-gatcha
+    environment:
+      - MONGO_URI=mongodb://admin:password@mongodb:27017/PokemonNexusDB?authSource=admin
+      - SECRET_KEY=your_strong_and_secret_key_for_flashing
+      - SESSION_TYPE=redis
+      - SESSION_REDIS=redis://redis:6379/1 
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - pn-network
+    # Use Gunicorn to run the gatcha service file
+    command: gunicorn -w 4 --bind 0.0.0.0:5000 web.gatcha_service:app
 
-  redis:
-    image: redis:latest
-    container_name: micro-redis
-    restart: always
-    ports:
-      - "6379:6379"
-    command: redis-server --bind 0.0.0.0
-    volumes:
-      - micro-redis-volume:/data
+  # Trade Service (Handles /api/trade/*)
+  app-trade:
+    build: . 
+    container_name: pn-app-trade
+    environment:
+      - MONGO_URI=mongodb://admin:password@mongodb:27017/PokemonNexusDB?authSource=admin
+      - SECRET_KEY=your_strong_and_secret_key_for_flashing
+      - SESSION_TYPE=redis
+      - SESSION_REDIS=redis://redis:6379/1 
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - pn-network
+    # Use Gunicorn to run the trade service file
+    command: gunicorn -w 4 --bind 0.0.0.0:5000 web.trade_service:app
 
+  # Battle Service (Handles real-time Socket.IO communication)
+  app-battle:
+    build: . 
+    container_name: pn-app-battle
+    environment:
+      - MONGO_URI=mongodb://admin:password@mongodb:27017/PokemonNexusDB?authSource=admin
+      - SECRET_KEY=your_strong_and_secret_key_for_flashing
+      - SESSION_TYPE=redis
+      - SESSION_REDIS=redis://redis:6379/1 
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - pn-network
+    # FIX: Use Gunicorn with the Eventlet worker for SocketIO
+    command: gunicorn -k eventlet -w 1 --bind 0.0.0.0:5001 web.battle_service:app
+
+  # 7. Database (MongoDB)
   mongodb:
     image: mongo:latest
-    container_name: micro-mongodb
+    container_name: pn-mongodb
     restart: always
-    ports:
-      - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
     volumes:
-      - micro-mongo-volume:/data/db
+      - pn-mongo-volume:/data/db
+    networks:
+      - pn-network
 
-volumes:
-  micro-mongo-volume:
-  micro-redis-volume:
+  # 8. Session/Broker (Redis)
+  redis:
+    image: redis:latest
+    container_name: pn-redis
+    restart: always
+    volumes:
+      - pn-redis-volume:/data
+    networks:
+      - pn-network
