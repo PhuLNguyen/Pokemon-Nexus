@@ -62,6 +62,7 @@ Generate the graphs from test result data generate from Step 3
 ```bash
 cd ./load_test/microservices && python3 ./analyze_results.py
 ```
+Note: As per the terminal message, "Analysis Complete! Graphs are saved in the 'test_results/analysis' directory."
 
 ### Step 5: 
 Tear down the application stack of Microservices Architecture.
