@@ -36,6 +36,8 @@ cd ../..
 docker compose -f ./layered/docker-compose.yaml down --volumes
 ```
 
+
+
 ## Part 2: Running and Testing Microservices Architecture
 
 ### Step 1: 
