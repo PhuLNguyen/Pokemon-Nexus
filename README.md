@@ -73,9 +73,3 @@ Tear down the application stack of Microservices Architecture.
 cd ../..
 docker compose -f ./microservices/docker-compose.yaml down --volumes
 ```
-
-## TODO
-- create lab report
-- create powerpoint slide
-- make this repo public
-- submit on Canvas
