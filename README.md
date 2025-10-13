@@ -75,13 +75,6 @@ docker compose -f ./microservices/docker-compose.yaml down --volumes
 ```
 
 ## TODO
-- Display current user on home page 
-- BUG in trade feature:
-	a. allow creator to trade their own pokemon
-	b. not have a cancel button
-- create microservice architecture with at least 5 nodes (containers)
-- test for performance
-- test for scalability
 - create lab report
 - create powerpoint slide
 - make this repo public
