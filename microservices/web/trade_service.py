@@ -9,135 +9,113 @@ app, mongo = create_app(__name__)
 
 # --- Routes ---
 
-@app.route('/api/trades', methods=['GET', 'POST'])
-def handle_trades():
-    user_email = get_current_user_email()
-    if not user_email:
-        return jsonify({'message': 'Unauthorized'}), 401
-
-    # --- GET: List Open Trades ---
-    if request.method == 'GET':
-        # Find trades where status is 'open' and the user is not the creator
-        trades = mongo.db.trades.find({
-            "status": "open", 
-            "creator_email": {"$ne": user_email}
-        })
+@app.route('/api/trade/', methods=['GET'])
+def get_trade_menu_data():
+    """Returns the current player's inventory and all pending trades."""
+    # 1. Get current player's available (unlocked) inventory
+    available_inventory = mongo.db.pokemon.find({"player": get_current_user_email(), "locked": False})
+    available_inventory = list(available_inventory)
+    
+    # 2. Get all pending trades
+    pending_trades = []
+    for doc in mongo.db.trade.find({"status": "pending"}):
+        doc['id'] = str(doc.pop('_id'))
         
-        trade_list = []
-        for trade in trades:
-            # Convert ObjectId to string for JSON serialization
-            trade['_id'] = str(trade['_id'])
-            trade_list.append(trade)
-            
-        return jsonify(trade_list), 200
-
-    # --- POST: Create a New Trade ---
-    elif request.method == 'POST':
-        data = request.get_json()
-        monster_id_str = data.get('monster_id')
-        desired_monster_species = data.get('desired_species')
-
-        if not monster_id_str or not desired_monster_species:
-            return jsonify({'message': 'Missing monster_id or desired_species'}), 400
-
-        try:
-            monster_id = ObjectId(monster_id_str)
-        except:
-            return jsonify({'message': 'Invalid Monster ID format'}), 400
-
-        # 1. Verify the user owns the monster and it's not already traded
-        offered_monster = mongo.db.inventory.find_one({
-            "_id": monster_id,
-            "owner_email": user_email
-        })
-
-        if not offered_monster:
-            return jsonify({'message': 'Offered monster not found or not owned'}), 404
+        # Look up the details of the offered pokemon (for display)
+        offered_pokemon_details = []
+        for p_id in doc['offering_ids']:
+            p_doc = mongo.db.pokemon.find_one({'_id': ObjectId(p_id)})
+            if p_doc:
+                offered_pokemon_details.append({"name": p_doc['name'], "image": p_doc['image']})
         
-        # 2. Create the trade offer
-        new_trade = {
-            "creator_email": user_email,
-            "offered_monster_id": monster_id_str,
-            "offered_monster_name": offered_monster['name'],
-            "desired_species": desired_monster_species,
-            "status": "open",
-            "created_at": datetime.now()
-        }
-        
-        # Temporarily mark the monster as 'in trade' to prevent it from being released or used elsewhere
-        mongo.db.inventory.update_one(
-            {"_id": monster_id},
-            {"$set": {"status": "in_trade", "trade_id": new_trade['_id']}}
-        )
+        doc['offered_details'] = offered_pokemon_details
+        pending_trades.append(doc)
 
-        mongo.db.trades.insert_one(new_trade)
-        new_trade['_id'] = str(new_trade['_id'])
-        
-        return jsonify({'message': 'Trade offer created successfully', 'trade': new_trade}), 201
-
-@app.route('/api/trade/<trade_id>', methods=['POST'])
-def fulfill_trade(trade_id):
-    """Allows a user to accept and fulfill an open trade offer."""
-    user_email = get_current_user_email()
-    if not user_email:
-        return jsonify({'message': 'Unauthorized'}), 401
-
-    data = request.get_json()
-    accepting_monster_id_str = data.get('accepting_monster_id')
-
-    if not accepting_monster_id_str:
-        return jsonify({'message': 'Missing accepting_monster_id'}), 400
-
-    try:
-        trade_obj_id = ObjectId(trade_id)
-        accepting_monster_id = ObjectId(accepting_monster_id_str)
-    except:
-        return jsonify({'message': 'Invalid ID format'}), 400
-
-    # 1. Check if the trade is open and not created by the current user
-    trade = mongo.db.trades.find_one({"_id": trade_obj_id, "status": "open", "creator_email": {"$ne": user_email}})
-
-    if not trade:
-        return jsonify({'message': 'Trade not found, closed, or you are the creator'}), 404
-
-    # 2. Verify the accepting user owns the monster they are offering
-    accepting_monster = mongo.db.inventory.find_one({
-        "_id": accepting_monster_id, 
-        "owner_email": user_email,
-        "status": {"$ne": "in_trade"}
+    return jsonify({
+        "inventory": available_inventory,
+        "pending_trades": pending_trades,
+        "current_player": get_current_user_email()
     })
+
+@app.route('/api/trade/create/', methods=['POST'])
+def create_trade():
+    """Locks the selected single Pokemon and creates a new trade request, requesting one in return."""
+    data = request.get_json()
+    offering_ids = data.get('offering_ids', [])
     
-    if not accepting_monster:
-        return jsonify({'message': 'Accepting monster not found, not owned, or is in another trade'}), 404
+    # 1. Enforce 1-for-1 rule: must offer exactly one Pokemon
+    if len(offering_ids) != 1:
+        return jsonify({"message": "You must offer exactly one Pokémon for a 1-for-1 trade."}), 400
+
+    object_id = ObjectId(offering_ids[0])
     
-    # 3. Verify the accepting monster matches the desired species
-    if accepting_monster.get('species') != trade['desired_species']:
-        return jsonify({'message': f"Trade requires species: {trade['desired_species']}"}), 400
-        
-    # 4. Perform the trade (swapping ownership)
-    
-    # Get the offered monster (from the creator)
-    offered_monster_id = ObjectId(trade['offered_monster_id'])
-    
-    # A. Update ownership of the monster offered by the creator (becomes new owner's)
-    mongo.db.inventory.update_one(
-        {"_id": offered_monster_id},
-        {"$set": {"owner_email": user_email, "status": "traded", "trade_id": None}}
+    # 2. Lock the Pokemon for trade
+    lock_result = mongo.db.pokemon.update_one(
+        {'_id': object_id, 'player': get_current_user_email(), 'locked': False},
+        {'$set': {'locked': True}}
     )
 
-    # B. Update ownership of the monster offered by the accepter (becomes creator's)
-    mongo.db.inventory.update_one(
-        {"_id": accepting_monster_id},
-        {"$set": {"owner_email": trade['creator_email'], "status": "traded", "trade_id": None}}
+    if lock_result.modified_count != 1:
+        return jsonify({"message": "Could not lock the selected Pokémon. It may be locked or not yours."}), 409
+
+    # 3. Create the trade request document (always looking for 1)
+    trade_request = {
+        "creator": get_current_user_email(),
+        "offering_ids": offering_ids, 
+        "looking_for_count": 1, # Fixed at 1
+        "status": "pending",
+        "timestamp": datetime.now()
+    }
+    mongo.db.trade.insert_one(trade_request)
+    
+    return jsonify({
+        "message": "1-for-1 Trade request created! Your Pokémon is locked.",
+        "locked_count": 1
+    })
+
+@app.route('/api/trade/fulfill/', methods=['PUT'])
+def fulfill_trade():
+    """Requires exactly one Pokémon to fulfill the trade, swaps ownership, and removes the request."""
+    data = request.get_json()
+    trade_id = data.get('trade_id')
+    fulfilling_ids = data.get('fulfilling_ids', [])
+
+    if not trade_id or len(fulfilling_ids) != 1:
+        return jsonify({"message": "Missing trade ID or you must offer exactly one Pokémon."}), 400
+
+    trade_obj_id = ObjectId(trade_id)
+    fulfilling_obj_id = ObjectId(fulfilling_ids[0])
+    
+    # 1. Retrieve the trade request
+    trade = mongo.db.trade.find_one({'_id': trade_obj_id})
+    if not trade or trade.get('looking_for_count') != 1:
+        return jsonify({"message": "Trade request not found or is not a 1-for-1 trade."}), 404
+    
+    # The Pokemon offered in the original trade
+    original_offered_id = ObjectId(trade['offering_ids'][0])
+    
+    # 2. Perform the swap using two atomic updates
+    
+    # A. Original Creator (e.g., TrainerB) receives CURRENT_PLAYER's (TrainerA's) Pokemon
+    mongo.db.pokemon.update_one(
+        {'_id': fulfilling_obj_id, 'player': get_current_user_email()},
+        {'$set': {'player': trade['creator'], 'locked': False}}
+    )
+    
+    # B. CURRENT_PLAYER (TrainerA) receives the Original Creator's (TrainerB's) Pokemon (and unlocks it)
+    mongo.db.pokemon.update_one(
+        {'_id': original_offered_id},
+        {'$set': {'player': get_current_user_email(), 'locked': False}}
     )
 
-    # 5. Update trade status to closed
-    mongo.db.trades.update_one(
-        {"_id": trade_obj_id},
-        {"$set": {"status": "closed", "accepter_email": user_email, "fulfilled_at": datetime.now()}}
-    )
+    # 3. Delete the fulfilled trade request
+    mongo.db.trade.delete_one({'_id': trade_obj_id})
 
-    return jsonify({'message': 'Trade fulfilled successfully!'}), 200
+    return jsonify({
+        "message": "Trade successful! 1-for-1 Pokémon swap completed.",
+        "traded_in": str(original_offered_id),
+        "traded_out": str(fulfilling_obj_id)
+    })
 
 
 if __name__ == '__main__':

@@ -70,11 +70,11 @@ export const API = {
     runGatcha: () => callApi('gatcha/', 'POST'),
 
     // Trade related APIs
-    getTradeData: () => callApi('trade', 'GET'),
+    getTradeData: () => callApi('trade/', 'GET'),
     createTrade: (offering_ids, looking_for_count) => 
-        callApi('trade/create', 'POST', { offering_ids, looking_for_count }), 
+        callApi('trade/create/', 'POST', { offering_ids, looking_for_count }), 
     fulfillTrade: (trade_id, fulfilling_ids) => 
-        callApi('trade/fulfill', 'PUT', { trade_id, fulfilling_ids }),
+        callApi('trade/fulfill/', 'PUT', { trade_id, fulfilling_ids }),
 
     // User related APIs
     // Server exposes this at /api/user/info
