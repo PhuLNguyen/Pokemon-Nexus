@@ -89,7 +89,7 @@ window.loadContent = async function(endpoint) {
 // --- Initialization ---
 function init() {
     // Initialize Socket.IO connection with automatic reconnection
-    const socket = io('http://localhost:5000', {
+    const socket = io('http://localhost:8080', {
         path: '/socket.io',  // Remove trailing slash
         transports: ['websocket', 'polling'],  // Allow fallback to polling
         reconnection: true,
