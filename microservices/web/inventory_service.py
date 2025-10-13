@@ -23,36 +23,27 @@ def get_inventory():
     
     return jsonify(inventory)
 
-@app.route('/api/release', methods=['POST'])
+@app.route('/api/release/', methods=['PUT'])
 def release_monster():
-    """Allows a user to release (delete) a monster from their inventory."""
-    user_email = get_current_user_email()
-    if not user_email:
-        return jsonify({'message': 'Unauthorized'}), 401
-
+    """Deletes multiple Pokemon documents based on their unique IDs."""
     data = request.get_json()
-    monster_id_str = data.get('monster_id')
+    pokemon_ids_to_release = data.get('ids', [])
 
-    if not monster_id_str:
-        return jsonify({'message': 'Missing monster_id'}), 400
-    
-    try:
-        # MongoDB requires ObjectId for lookup
-        monster_id = ObjectId(monster_id_str)
-    except:
-        return jsonify({'message': 'Invalid Monster ID format'}), 400
+    if not pokemon_ids_to_release:
+        return jsonify({"message": "No Pokemon IDs provided for release."}), 400
 
-    # Ensure the monster belongs to the user and then delete it
-    result = mongo.db.inventory.delete_one({
-        "_id": monster_id, 
-        "player": user_email
+    # Convert string IDs back to MongoDB ObjectId objects
+    object_ids = [ObjectId(p_id) for p_id in pokemon_ids_to_release]
+
+    # Use $in operator to find all documents whose _id is in the list
+    result = mongo.db.pokemon.delete_many({
+        '_id': {'$in': object_ids}
     })
 
-    if result.deleted_count == 1:
-        return jsonify({'message': 'Monster released successfully'}), 200
-    else:
-        # Could be not found or not owned by the user
-        return jsonify({'message': 'Monster not found or you do not own it'}), 404
+    return jsonify({
+        "message": f"Successfully released {result.deleted_count} Pokemon!",
+        "deleted_count": result.deleted_count
+    })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000) # Microservices run on default 5000 internally

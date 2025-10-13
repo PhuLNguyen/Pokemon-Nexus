@@ -63,7 +63,7 @@ async function callApi(endpoint, method, bodyData = null) {
 export const API = {
     // Inventory related APIs
     getInventory: () => callApi('inventory/', 'GET'),
-    releasePokemon: (ids) => callApi('release', 'DELETE', { ids }),
+    releasePokemon: (ids) => callApi('release/', 'PUT', { ids }),
 
     // Catch Pokemon API
     // Use trailing slash to match proxy paths and avoid 301 redirects from nginx
