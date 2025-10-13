@@ -13,20 +13,15 @@ def serialize_inventory(monster):
         monster['_id'] = str(monster['_id'])
     return monster
 
-@app.route('/api/inventory', methods=['GET'])
+@app.route('/api/inventory/', methods=['GET'])
 def get_inventory():
     """Retrieves all monsters owned by the current user."""
     user_email = get_current_user_email()
-    if not user_email:
-        return jsonify({'message': 'Unauthorized'}), 401
 
     # Fetch all monsters belonging to the user
-    inventory = mongo.db.inventory.find({"owner_email": user_email})
+    inventory = mongo.db.pokemon.find({"player": user_email})
     
-    # Serialize the results before returning
-    monsters_list = [serialize_inventory(m) for m in inventory]
-    
-    return jsonify(monsters_list), 200
+    return jsonify(inventory)
 
 @app.route('/api/release', methods=['POST'])
 def release_monster():
@@ -50,7 +45,7 @@ def release_monster():
     # Ensure the monster belongs to the user and then delete it
     result = mongo.db.inventory.delete_one({
         "_id": monster_id, 
-        "owner_email": user_email
+        "player": user_email
     })
 
     if result.deleted_count == 1:

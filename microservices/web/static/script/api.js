@@ -62,7 +62,7 @@ async function callApi(endpoint, method, bodyData = null) {
 // Specific API functions
 export const API = {
     // Inventory related APIs
-    getInventory: () => callApi('inventory', 'GET'),
+    getInventory: () => callApi('inventory/', 'GET'),
     releasePokemon: (ids) => callApi('release', 'DELETE', { ids }),
 
     // Catch Pokemon API
