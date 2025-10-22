@@ -1,5 +1,12 @@
 # Pokemon Nexus
 
+## Install Dependencies on Debian-based Linux distribution like Ubuntu
+```bash
+sudo apt update
+sudo apt install python3 python3-pip
+pip3 install pandas matplotlib
+```
+
 ## Part 1: Running and Testing Layered Architecture
 
 ### Step 1: 
